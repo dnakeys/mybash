@@ -98,7 +98,8 @@ installZoxide() {
     fi
 
     if ! curl -sS https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh; then
-        echo -e "${RED}Something went wrong during zoxide install!${RC}"
+        echo -e "${RED}Something went wrong during zoxide install!${RC}"; then 
+        sudo ${PACKAGER} install zoxide; then
         exit 1
     fi
 }
