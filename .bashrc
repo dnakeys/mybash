@@ -642,6 +642,7 @@ compdef _git gsbm='git-submodule-update'
 # Will return the current branch name
 # Usage example: git pull origin $(current_branch)
 #
+}
 function current_branch() {
   ref=$(git symbolic-ref HEAD 2> /dev/null) || return
   echo ${ref#refs/heads/}
@@ -728,4 +729,4 @@ else
 	echo "can't found the autojump script"
 fi
 
-[ -f ~/.fzf.bash ] && source ~/.fzf.bash
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash ];
