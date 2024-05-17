@@ -463,15 +463,25 @@ install_bashrc_support() {
 }
 
 # Show current network information
-netinfo() {
-	echo "--------------- Network Information ---------------"
-	/sbin/ifconfig | awk /'inet addr/ {print $2}'
-	echo ""
-	/sbin/ifconfig | awk /'Bcast/ {print $3}'
-	echo ""
-	/sbin/ifconfig | awk /'inet addr/ {print $4}'
+# netinfo() {
+# 	echo "--------------- Network Information ---------------" # removed these lines due to not showing any info on my system 
+# 	/sbin/ifconfig | awk /'inet addr/ {print $2}'
+# 	echo ""
+# 	/sbin/ifconfig | awk /'Bcast/ {print $3}'
+# 	echo ""
+# 	/sbin/ifconfig | awk /'inet addr/ {print $4}'
 
-	/sbin/ifconfig | awk /'HWaddr/ {print $4,$5}'
+# 	/sbin/ifconfig | awk /'HWaddr/ {print $4,$5}'
+# 	echo "---------------------------------------------------"
+ netinfo() {
+	echo "--------------- Network Information ---------------"
+	ip a | awk '/^[0-9]+:/{gsub(/:/,"",$2); device=$2} /^[[:space:]]*inet /{print "Device: " device "  IP: " $2}' # shows all devices with ip's
+# '
+# 	echo ""
+# 	/sbin/ifconfig | awk /'Bcast/ {print $3}'
+# 	echo ""
+# 	/sbin/ifconfig | awk /'inet addr/ {print $4}'
+# 	/sbin/ifconfig | awk /'HWaddr/ {print $4,$5}'
 	echo "---------------------------------------------------"
 }
 
