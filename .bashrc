@@ -4,6 +4,33 @@ iatest=$(expr index "$-" i)
 #######################################################
 # SOURCED ALIAS'S AND SCRIPTS BY zachbrowne.me
 #######################################################
+# # Create an array of potential dotfiles
+
+# dotfiles=(
+
+# "${HOME}/.bash_aliases"
+
+# "${HOME}/.bash_functions"
+
+# "${HOME}/.bashrc_colors"
+
+# "${HOME}/.text_functions"
+
+# )
+
+# # Work through our list of dotfiles, if a match is found, load it
+
+# # shellcheck source=/dev/null
+
+# for dotfile in "${dotfiles[@]}"; do
+
+# [[ -r "${dotfile}" ]] && source "${dotfile}"
+
+# done
+
+# unset dotfiles; unset -v dotfile
+
+
 
 # Source global definitions
 if [ -f /etc/bashrc ]; then
@@ -18,26 +45,26 @@ elif [ -f /etc/bash_completion ]; then
 fi
 #######################automaticaly get update from github
 # # Define GitHub repository URL and branch
-# REPO_URL="https://github.com/dnakeys/mybash.git"
-# BRANCH="main"  # Change this to your branch name
+ REPO_URL="https://github.com/dnakeys/mybash.git"
+ BRANCH="main"  # Change this to your branch name
 # #  https://github.com/dnakeys/mybash/blob/main/.bashrc
 # # Path to your .bashrc file
-# BASHRC_FILE="$HOME/.bashrc"
+ BASHRC_FILE="$HOME/.bashrc"
 
 # # Temporarily store new .bashrc content
-# TEMP_FILE=$(mktemp)
+ TEMP_FILE=$(mktemp)
 
 # # Fetch .bashrc from GitHub
-# curl -sSL "https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc" -o "$TEMP_FILE"
+ curl -sSL "https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc" -o "$TEMP_FILE"
 
 # # Replace existing .bashrc with the fetched one
-# if [ -s "$TEMP_FILE" ]; then
-#     mv -f "$TEMP_FILE" "$BASHRC_FILE" # no confirm before saving
+ if [ -s "$TEMP_FILE" ]; then
+     mv -f "$TEMP_FILE" "$BASHRC_FILE" # no confirm before saving
 # 	# mv  "$TEMP_FILE" "$BASHRC_FILE" #will ask for confrm before saving
-#     echo "Updated .bashrc successfully."
-# else
-#     echo "Failed to update .bashrc."
-# fi
+     echo "Updated .bashrc successfully."
+ else
+     echo "Failed to update .bashrc."
+ fi
 # ################end of git update mv -f "$TEMP_FILE" "$BASHRC_FILE"
 #######################################################
 # EXPORTS
@@ -71,8 +98,8 @@ if [[ $iatest -gt 0 ]]; then bind "set completion-ignore-case on"; fi
 if [[ $iatest -gt 0 ]]; then bind "set show-all-if-ambiguous On"; fi
 
 # Set the default editor
-export EDITOR=nano
-export VISUAL=nano
+export EDITOR="/usr/bin/nano"
+export VISUAL=nvim
 alias pico='edit'
 alias spico='sedit'
 alias nano='edit'
@@ -155,8 +182,11 @@ alias freshclam='sudo freshclam'
 alias vi='nvim'
 alias svi='sudo vi'
 alias vis='nvim "+set si"'
+alias nst='netstat -tulpn
+alias sysupdate='sudo apt-get update; sudo apt-get upgrade -y; sudo apt-get autoremove -y; sudo apt-get autoclean -y'
 
 # Change directory aliases
+alias ..='
 alias home='cd ~'
 alias cd..='cd ..'
 alias ..='cd ..'
@@ -185,6 +215,10 @@ alias ll='ls -Fls'                # long listing format
 alias labc='ls -lap'              #alphabetical sort
 alias lf="ls -l | egrep -v '^d'"  # files only
 alias ldir="ls -l | egrep '^d'"   # directories only
+## Colorize the grep command output for ease of use (good for log files)##
+alias grep='grep --color=auto'
+alias egrep='egrep --color=auto'
+alias fgrep='fgrep --color=auto'
 
 # alias chmod commands
 alias mx='chmod a+x'
@@ -634,49 +668,49 @@ lazyg() {
 
 # Aliases git
 alias g='git'
-compdef g=git
+# compdef g=git
 alias gst='git status'
-compdef _git gst=git-status
+# compdef _git gst=git-status
 alias gcl='git clone --recurse-submodules'
-compdef _git gcl=git-clone
+# compdef _git gcl=git-clone
 alias gl='git pull'
-compdef _git gl=git-pull
+# compdef _git gl=git-pull
 alias gup='git fetch && git rebase'
-compdef _git gup=git-fetch
+# compdef _git gup=git-fetch
 alias gp='git push'
-compdef _git gp=git-push
-gdv() { git diff -w "$@" | view - }
-compdef _git gdv=git-diff
-alias gc='git commit -v'
-compdef _git gc=git-commit
-alias gca='git commit -v -a'
-compdef _git gca=git-commit
-alias gco='git checkout'
-compdef _git gco=git-checkout
-alias gcm='git checkout master'
-alias gb='git branch'
-compdef _git gb=git-branch
-alias gba='git branch -a'
-compdef _git gba=git-branch
-alias gcount='git shortlog -sn'
-compdef gcount=git
-alias gcp='git cherry-pick'
-compdef _git gcp=git-cherry-pick
-alias glg='git log --stat --max-count=5'
-compdef _git glg=git-log
-alias glgg='git log --graph --max-count=5'
-compdef _git glgg=git-log
-alias gss='git status -s'
-compdef _git gss=git-status
-alias ga='git add'
-compdef _git ga=git-add
-alias gm='git merge'
-compdef _git gm=git-merge
-alias grh='git reset HEAD'
-alias grhh='git reset HEAD --hard'
-compdef _git grhh=git-reset-hard
-alias gsbm='git submodule update --init --remote --force --recursive'
-compdef _git gsbm='git-submodule-update'
+# compdef _git gp=git-push
+# gdv() { git diff -w "$@" | view - }
+# compdef _git gdv=git-diff
+# alias gc='git commit -v'
+# compdef _git gc=git-commit
+# alias gca='git commit -v -a'
+# compdef _git gca=git-commit
+# alias gco='git checkout'
+# compdef _git gco=git-checkout
+# alias gcm='git checkout master'
+# alias gb='git branch'
+# compdef _git gb=git-branch
+# alias gba='git branch -a'
+# compdef _git gba=git-branch
+# alias gcount='git shortlog -sn'
+# compdef gcount=git
+# alias gcp='git cherry-pick'
+# compdef _git gcp=git-cherry-pick
+# alias glg='git log --stat --max-count=5'
+# compdef _git glg=git-log
+# alias glgg='git log --graph --max-count=5'
+# compdef _git glgg=git-log
+# alias gss='git status -s'
+# compdef _git gss=git-status
+# alias ga='git add'
+# compdef _git ga=git-add
+# alias gm='git merge'
+# compdef _git gm=git-merge
+# alias grh='git reset HEAD'
+# alias grhh='git reset HEAD --hard'
+# compdef _git grhh=git-reset-hard
+# alias gsbm='git submodule update --init --remote --force --recursive'
+# compdef _git gsbm='git-submodule-update'
 
 #
 # Will return the current branch name
@@ -750,7 +784,7 @@ alias lookingglass="~/looking-glass-B5.0.1/client/build/looking-glass-client -F"
 
 alias hug="hugo server -F --bind=10.0.0.210 --baseURL=http://10.0.0.210"
 
-export PATH=$PATH:"$HOME/.local/bin:$HOME/.cargo/bin:/var/lib/flatpak/exports/bin:/.local/share/flatpak/exports/bin"
+export PATH=$PATH:"$HOME/.local/bin:$HOME/.cargo/bin:/var/lib/flatpak/exports/bin:/.local/share/flatpak/exports/bin:/usr/bin"
 
 # Install Starship - curl -sS https://starship.rs/install.sh | sh
 
