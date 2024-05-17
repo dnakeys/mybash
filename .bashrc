@@ -182,7 +182,7 @@ alias freshclam='sudo freshclam'
 alias vi='nvim'
 alias svi='sudo vi'
 alias vis='nvim "+set si"'
-alias nst='netstat -tulpn
+alias nst='netstat -tulpn'
 alias sysupdate='sudo apt-get update; sudo apt-get upgrade -y; sudo apt-get autoremove -y; sudo apt-get autoclean -y'
 
 # Change directory aliases
