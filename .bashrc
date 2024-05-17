@@ -32,12 +32,13 @@ curl -sSL "https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc" -o "$T
 
 # Replace existing .bashrc with the fetched one
 if [ -s "$TEMP_FILE" ]; then
-    mv "$TEMP_FILE" "$BASHRC_FILE"
+    mv -f "$TEMP_FILE" "$BASHRC_FILE" # no confirm before saving
+	# mv  "$TEMP_FILE" "$BASHRC_FILE" #will ask for confrm before saving
     echo "Updated .bashrc successfully."
 else
     echo "Failed to update .bashrc."
 fi
-################end of git update
+################end of git update mv -f "$TEMP_FILE" "$BASHRC_FILE"
 #######################################################
 # EXPORTS
 #######################################################
