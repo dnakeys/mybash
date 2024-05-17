@@ -102,7 +102,7 @@ export EDITOR="/usr/bin/nano"
 export VISUAL=nvim
 alias pico='edit'
 alias spico='sedit'
-alias nano='edit'
+alias nano='editor'
 alias snano='sedit'
 alias vim='nvim'
 
