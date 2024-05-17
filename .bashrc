@@ -160,7 +160,7 @@ alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo
 
 # Edit this .bashrc file
 alias ebrc='edit ~/.bashrc'
-
+alias relaodbash='. ~/.bashrc'
 # Show help for this .bashrc file
 alias hlp='less ~/.bashrc_help'
 
