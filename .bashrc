@@ -102,8 +102,8 @@ export EDITOR="/usr/bin/nano"
 export VISUAL=nvim
 alias pico='edit'
 alias spico='sedit'
-alias nano='editor'
-alias snano='sedit'
+alias nano='nano-tiny'
+alias snano='sudo nano-tiny'
 alias vim='nvim'
 
 # Replace batcat with cat on Fedora as batcat is not available as a RPM in any form
