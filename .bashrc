@@ -43,29 +43,29 @@ if [ -f /usr/share/bash-completion/bash_completion ]; then
 elif [ -f /etc/bash_completion ]; then
 	. /etc/bash_completion
 fi
-#######################automaticaly get update from github
-# # Define GitHub repository URL and branch
- REPO_URL="https://github.com/dnakeys/mybash.git"
- BRANCH="main"  # Change this to your branch name
-# #  https://github.com/dnakeys/mybash/blob/main/.bashrc
-# # Path to your .bashrc file
- BASHRC_FILE="$HOME/.bashrc"
+########### automaticaly get bash update from github ###########
+#
+REPO_URL="https://github.com/dnakeys/mybash.git"
+BRANCH="main"  # Change this to your branch name
+#
+# Path to .bashrc file
+BASHRC_FILE="$HOME/.bashrc"
 
-# # Temporarily store new .bashrc content
- TEMP_FILE=$(mktemp)
+# temp save bash file
+TEMP_FILE=$(mktemp)
 
-# # Fetch .bashrc from GitHub
- curl -sSL "https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc" -o "$TEMP_FILE"
+# grab updated bash 
+curl -sSL "https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc" -o "$TEMP_FILE"
 
-# # Replace existing .bashrc with the fetched one
- if [ -s "$TEMP_FILE" ]; then
-     mv -f "$TEMP_FILE" "$BASHRC_FILE" # no confirm before saving
-# 	# mv  "$TEMP_FILE" "$BASHRC_FILE" #will ask for confrm before saving
-     echo "Updated .bashrc successfully."
- else
-     echo "Failed to update .bashrc."
- fi
-# ################end of git update mv -f "$TEMP_FILE" "$BASHRC_FILE"
+# repalce bash with new
+if [ -s "$TEMP_FILE" ]; then
+    mv -f "$TEMP_FILE" "$BASHRC_FILE" # no confirm before saving
+   # mv  "$TEMP_FILE" "$BASHRC_FILE" # will ask for confrm before saving
+    echo "Updated .bashrc successfully."
+else
+    echo "Failed to update .bashrc."
+fi
+####### end of update #########
 #######################################################
 # EXPORTS
 #######################################################
