@@ -1177,4 +1177,4 @@ else
 	echo "can't found the autojump script"
 fi
 
-[ -f ~/.fzf.bash ] && source ~/.fzf.bash ];
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash ]
