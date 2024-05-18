@@ -1175,6 +1175,8 @@ elif [ -f "/usr/share/autojump/autojump.bash" ]; then
 	. /usr/share/autojump/autojump.bash
 else
 	echo "can't found the autojump script"
-fi
 }
+fi
+
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash ]
+}
