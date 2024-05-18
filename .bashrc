@@ -165,7 +165,7 @@ alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo
 
 # Edit this .bashrc file
 alias ebrc='edit ~/.bashrc'
-alias relaodbash='. ~/.bashrc'
+alias reloadbash='. ~/.bashrc'
 # Show help for this .bashrc file
 alias hlp='less ~/.bashrc_help'
 
@@ -848,7 +848,7 @@ alias ds='df --human-readable --print-type --exclude-type=squashfs --exclude-typ
 # Show open ports
 alias ports='netstat -tulanp'
 ##
-elif cmd-exists --strict nala; then # Debian/Ubuntu/Raspbian
+if cmd-exists --strict nala; then # Debian/Ubuntu/Raspbian
 	# Link: https://gitlab.com/volian/nala
 	# Link: https://itsfoss.com/nala/
 	alias has='nala show'
