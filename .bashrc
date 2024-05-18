@@ -1168,15 +1168,15 @@ eval "$(starship init bash)"
 eval "$(zoxide init bash)"
 
 #Autojump and fzf
-{
-if [ -f "/usr/share/autojump/autojump.sh" ]; then
-	. /usr/share/autojump/autojump.sh
-elif [ -f "/usr/share/autojump/autojump.bash" ]; then
-	. /usr/share/autojump/autojump.bash
-else
-	echo "can't found the autojump script"
-}
-fi
+# {
+# if [ -f "/usr/share/autojump/autojump.sh" ]; then
+# 	. /usr/share/autojump/autojump.sh
+# elif [ -f "/usr/share/autojump/autojump.bash" ]; then
+# 	. /usr/share/autojump/autojump.bash
+# else
+# 	echo "can't found the autojump script"
+# }
+# fi
 
-[ -f ~/.fzf.bash ] && source ~/.fzf.bash ]
-}
+# [ -f ~/.fzf.bash ] && source ~/.fzf.bash ]
+# }
