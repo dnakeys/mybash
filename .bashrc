@@ -3,6 +3,11 @@ iatest=$(expr index "$-" i)
 
 #######################################################
 # SOURCED ALIAS'S AND SCRIPTS BY zachbrowne.me
+# if [ -f ~/.bash_aliases ]; then
+#     . ~/.bash_aliases
+# fi
+# if putting all aliases/functions/colors/etc in seperate file
+
 #######################################################
 # # Create an array of potential dotfiles
 
@@ -777,6 +782,376 @@ case "$PROMPT_COMMAND" in
 *) PROMPT_COMMAND="_zoxide_hook${PROMPT_COMMAND:+;${PROMPT_COMMAND}}" ;;
 esac
 alias lookingglass="~/looking-glass-B5.0.1/client/build/looking-glass-client -F"
+##
+# Check if a command or alias exists
+function cmd-exists() {
+	# If no arguments or just '--strict' is provided, show help message
+	if [[ -z "${1}" || (${#} -eq 1 && "${1}" == "--strict") ]]; then
+		echo -e "${BRIGHT_WHITE}cmd-exists:${RESET} Checks if a command or alias exists"
+		echo -e "${BRIGHT_WHITE}Options:${RESET}"
+		echo -e "  ${BRIGHT_YELLOW}--strict${RESET} or ${BRIGHT_YELLOW}-s${RESET} checks for executable commands only ${BRIGHT_RED}excluding aliases${RESET}"
+		echo -e "${BRIGHT_WHITE}Usage examples:${RESET}"
+		echo -e "  Check any command or alias:"
+		echo -e "    ${BRIGHT_GREEN}cmd-exists ${BRIGHT_YELLOW}ls${RESET}"
+		echo -e "  Check executable only ${BRIGHT_RED}(strict mode)${RESET}:"
+		echo -e "    ${BRIGHT_GREEN}cmd-exists ${BRIGHT_YELLOW}--strict ${BRIGHT_YELLOW}grep${RESET}"
+		echo -e "  Display this help message:"
+		echo -e "    ${BRIGHT_GREEN}cmd-exists${RESET}"
+		return 2  # Return code 2 to indicate incorrect usage
+	fi
+#
+
+#######################################################
+### FIND FILES OR FILE INFORMATION
+#######################################################
+
+# Searches for directories (can use wildcards)
+# Example: finddir config
+# Example: finddir "This has spaces"
+alias finddir='find . -type d -iname'
+
+# Recursively find all files modified in the last 24 hours (current directory)
+alias find24='find . -mtime -1 -ls'
+
+# Find all the symlinks containing search text (i.e. "/backup")
+alias findlinks="find . -type l -printf '%p -> ' -exec readlink -f {} ';' | grep -E"
+
+# To count how many files are in your current file system location:
+alias countfiles='find . -type f | wc -l'
+
+# To see if a command is aliased, a file, or a built-in command
+alias check="type -t"
+
+# If the mlocate package is installed
+if cmd-exists locate; then
+	# Case insensitive search and display only files present in your system
+	alias locate='locate -i -e'
+
+	# Update the locate database before locating a file
+	# --require-visibility 0 ensures only accessible files are indexed
+	alias ulocate='sudo updatedb --require-visibility 0 && locate'
+
+	# Always update the locate (mlocate) database as root
+	alias updatedb='sudo updatedb --require-visibility 0'
+
+	# Display the number of matching entries
+	alias locount='locate -c'
+fi
+
+#######################################################
+# Display disk space available and show file system type
+alias df='df --human-readable --print-type --exclude-type=squashfs'
+alias ds='df --human-readable --print-type --exclude-type=squashfs --exclude-type=tmpfs --exclude-type=devtmpfs'
+#####
+
+
+# Show open ports
+alias ports='netstat -tulanp'
+##
+elif cmd-exists --strict nala; then # Debian/Ubuntu/Raspbian
+	# Link: https://gitlab.com/volian/nala
+	# Link: https://itsfoss.com/nala/
+	alias has='nala show'
+	alias pkgupdateall='sudo nala update && sudo nala upgrade && if type pacstall >/dev/null 2>&1; then pacstall --upgrade; fi'
+	alias pkgupdate='sudo nala update'
+	alias pkginstall='sudo nala install --install-suggests'
+	alias pkgremove='sudo nala remove'
+	alias pkgclean='sudo nala clean --fix-broken'
+	alias pkgsearch='sudo nala search'
+	alias pkglist='sudo nala list --installed'
+	alias pkgmirrors='sudo nala fetch'
+elif cmd-exists --strict apt; then # Debian/Ubuntu/Raspbian
+	# Link: https://itsfoss.com/apt-command-guide/
+	alias has='apt show'
+	alias pkgupdateall='sudo apt update --assume-yes && sudo apt upgrade --assume-yes && if type pacstall >/dev/null 2>&1; then pacstall --upgrade; fi && if type tldr >/dev/null 2>&1; then tldr --update; fi'
+	alias pkgupdate='sudo apt-get install --only-upgrade'
+	alias pkginstall='sudo apt install'
+	alias pkgremove='sudo apt remove'
+	alias pkgclean='sudo apt autoremove'
+	alias pkgsearch='sudo apt search'
+	alias pkglist='sudo apt list --installed'
+	alias pkgcheck='sudo apt update --assume-yes && apt list --upgradable'
+elif cmd-exists --strict apt-get; then # Debian/Ubuntu
+	# Link: https://help.ubuntu.com/community/AptGet/Howto
+	alias has='apt-cache show'
+	alias pkgupdateall='sudo apt-get update && sudo apt-get upgrade && if type pacstall >/dev/null 2>&1; then pacstall --upgrade; fi && if type tldr >/dev/null 2>&1; then tldr --update; fi'
+	alias pkgupdate='sudo apt-get install --only-upgrade'
+	alias pkginstall='sudo apt-get install'
+	alias pkgremove='sudo apt-get remove'
+	alias pkgclean='sudo apt-get autoremove'
+	alias pkgsearch='sudo apt-cache search'
+	alias pkglist='sudo dpkg -l'
+fi
+##
+
+# Finds the current Linux distribution, name, version, and kernel version
+function ver() {
+	if cmd-exists --strict uname; then
+		# Get information about the system kernel, release, and machine hardware
+		uname --kernel-name --kernel-release --machine
+		echo
+	fi
+	if [[ -e /proc/version ]]; then
+		# File that contains version information about the operating kernel
+		cat /proc/version
+		echo
+	fi
+	if cmd-exists --strict lsb_release; then
+		# Provides LSB (Linux Standard Base) and distribution-specific information
+		lsb_release -a
+		echo
+	fi
+	if cmd-exists --strict hostnamectl; then
+		# Control the Linux system hostname, also shows various system details
+		hostnamectl
+		echo
+	else
+		# Various files that contain text relating to the system identification
+		cat /etc/*-release 2> /dev/null
+	fi
+}
+
+##
+
+# Send file(s) to the trash
+# Link: https://www.tecmint.com/trash-cli-manage-linux-trash-from-command-line/
+function trash() {
+	# Check for the presence of arguments
+	if [[ $# -eq 0 ]]; then
+		echo -e "${BRIGHT_WHITE}trash:${RESET} Send files to the trash"
+		echo -e "${BRIGHT_WHITE}Usage:${BRIGHT_CYAN} trash${RESET} ${BRIGHT_YELLOW}<filename1> [filename2] ...${RESET}"
+		return 1
+	fi
+
+	# Check if trash-cli exists...
+	# https://github.com/andreafrancia/trash-cli
+	if cmd-exists --strict trash-put; then
+		trash-put "${@}"
+	# Check if rem exists...
+	# Link: https://github.com/quackduck/rem
+	elif cmd-exists --strict rem; then
+		rem "${@}"
+	# Check if gio trash exists (glib2)...
+	# Link: https://wiki.archlinux.org/title/Trash-cli#gio_trash
+	elif cmd-exists --strict gio; then
+		gio trash "${@}"
+	# Check if kioclient5 exists (kde-cli-tools)...
+	# Link: https://wiki.archlinux.org/title/Trash-cli#kioclient5
+	elif cmd-exists --strict kioclient5; then
+		kioclient5 move "${@}" trash:/
+	elif [[ -d $HOME/.local/share/Trash/files ]]; then
+		mv "${@}" $HOME/.local/share/Trash/files/
+	elif [[ -d $HOME/.local/share/trash/files ]]; then
+		mv "${@}" $HOME/.local/share/trash/files/
+	elif [[ -d $HOME/.Trash ]]; then
+		mv "${@}" $HOME/.Trash/
+	elif [[ -d $HOME/.trash ]]; then
+		mv "${@}" $HOME/.trash/
+	else
+		mkdir $HOME/.trash
+		mv "${@}" $HOME/.trash/
+	fi
+}
+
+# Display the contents of the trash
+function trashlist() {
+	# Check if trash-cli exists...
+	# https://github.com/andreafrancia/trash-cli
+	if cmd-exists --strict trash-list; then
+		trash-list
+	# Check if rem exists...
+	# Link: https://github.com/quackduck/rem
+	elif cmd-exists --strict rem; then
+		rem -l
+	# Check if gio trash exists (glib2)...
+	# Link: https://wiki.archlinux.org/title/Trash-cli#gio_trash
+	elif cmd-exists --strict gio; then
+		gio list trash:///
+	# Check if kioclient5 exists (kde-cli-tools)...
+	# Link: https://wiki.archlinux.org/title/Trash-cli#kioclient5
+	elif cmd-exists --strict kioclient5; then
+		kioclient5 ls trash:/
+	# Check for alternative trash directories and list files
+	elif [[ -d ${HOME}/.local/share/Trash/files ]]; then
+		ls -l ${HOME}/.local/share/Trash/files/
+	elif [[ -d ${HOME}/.local/share/trash/files ]]; then
+		ls -l ${HOME}/.local/share/trash/files/
+	elif [[ -d ${HOME}/.Trash ]]; then
+		ls -l ${HOME}/.Trash/
+	elif [[ -d ${HOME}/.trash ]]; then
+		ls -l ${HOME}/.trash/
+	else
+		echo -e "${BRIGHT_RED}Error: ${BRIGHT_CYAN}No trash directory found${RESET}"
+	fi
+}
+
+# Empty and permanently delete all the files in the trash
+function trashempty() {
+	# Ask for user confirmation before deleting trash
+	if ask "${BRIGHT_WHITE}Are you sure you want to ${BRIGHT_MAGENTA}permanently delete${BRIGHT_WHITE} all the files in the trash? ${BRIGHT_RED}This action cannot be undone.${RESET}" "N"; then
+		# Check if trash-cli exists...
+		# https://github.com/andreafrancia/trash-cli
+		if cmd-exists --strict trash-empty; then
+			trash-empty
+		# Check if rem exists...
+		# Link: https://github.com/quackduck/rem
+		elif cmd-exists --strict rem; then
+			rem --empty
+		# Check if gio trash exists (glib2)...
+		# Link: https://wiki.archlinux.org/title/Trash-cli#gio_trash
+		elif cmd-exists --strict gio; then
+			gio trash --empty
+		# Check if kioclient5 exists (kde-cli-tools)...
+		# Link: https://wiki.archlinux.org/title/Trash-cli#kioclient5
+		elif cmd-exists --strict kioclient5; then
+			kioclient5 empty trash:/
+		# Check for alternative trash directories and delete files
+		elif [[ -d ${HOME}/.local/share/Trash/files ]]; then
+			rm -rf ${HOME}/.local/share/Trash/files/{..?*,.[!.]*,*} 2>/dev/null
+		elif [[ -d ${HOME}/.local/share/trash/files ]]; then
+			rm -rf ${HOME}/.local/share/trash/files/{..?*,.[!.]*,*} 2>/dev/null
+		elif [[ -d ${HOME}/.Trash ]]; then
+			rm -rf ${HOME}/.Trash/{..?*,.[!.]*,*} 2>/dev/null
+		elif [[ -d ${HOME}/.trash ]]; then
+			rm -rf ${HOME}/.trash/{..?*,.[!.]*,*} 2>/dev/null
+		else
+			# No supported method found for emptying trash
+			echo -e "${BRIGHT_RED}Error: ${BRIGHT_CYAN}No trash directory or supported application found${RESET}"
+		fi
+	else
+		# Operation was cancelled by the user
+		echo -e "${BRIGHT_RED}Operation cancelled.${RESET}"
+	fi
+}
+
+# Restore the trash only is trash-cli is installed
+# trash-cli - Command Line Interface to FreeDesktop.org Trash
+# Link: https://github.com/andreafrancia/trash-cli
+if cmd-exists --strict restore-trash; then
+	alias trashrestore='restore-trash'
+elif cmd-exists --strict trash-restore; then
+	alias trashrestore='trash-restore'
+fi
+
+###
+
+# Interactively create, configure, and test a new Linux user
+function createuser() {
+	sudo true
+	local username
+
+	# Check if a username was passed as a parameter
+	if [ "$#" -eq 1 ]; then
+		username="$1"
+	else
+		read -r -p $'${BRIGHT_CYAN}Enter the username for the new user:${RESET} ' username
+	fi
+
+	# Check if the user already exists
+	if id "${username}" &>/dev/null; then
+		echo -e "${BRIGHT_RED}User ${username} already exists. Aborting.${RESET}"
+		return 1
+	fi
+
+	# Confirm if the user should be created with a home directory
+	if ask "${BRIGHT_GREEN}Create a new user with a home folder?${RESET}" N; then
+		sudo useradd -m "${username}"
+	else
+		echo -e "${BRIGHT_RED}User creation aborted.${RESET}"
+		return 1
+	fi
+
+	# Set the user's password
+	echo -e "${BRIGHT_YELLOW}\nSet the user's password:${RESET}"
+	sudo passwd "${username}"
+
+	# Ask if the user should change their password upon next login
+	if ask "${BRIGHT_GREEN}Force user to change password on next login?${RESET}" N; then
+		sudo passwd -e "${username}"
+	else
+		echo -e "${BRIGHT_YELLOW}No change password enforced.${RESET}"
+	fi
+
+	# Ask if the user should have root (sudo) access
+	if ask "${BRIGHT_MAGENTA}⚠️ Give user root access? ⚠️${RESET}" N; then
+		sudo usermod -a -G sudo "${username}"
+	else
+		echo -e "${BRIGHT_YELLOW}No root access granted.${RESET}"
+	fi
+
+	# Change the user's login shell to bash
+	echo -e "${BRIGHT_CYAN}\nChange user’s login shell to bash${RESET}"
+	sudo usermod --shell /bin/bash "${username}"
+
+	# Verify the user's settings
+	echo -e "${BRIGHT_YELLOW}\nVerifying user settings:${RESET}"
+	sudo grep "${username}" /etc/passwd
+
+	# Ask if you should copy over the local .bashrc to the new user
+	if ask "${BRIGHT_GREEN}Copy over your local .bashrc?${RESET}" N; then
+		sudo cp ~/.bashrc /home/"${username}"/
+		sudo chown "${username}":"${username}" /home/"${username}"/.bashrc
+		sudo chmod 644 /home/"${username}"/.bashrc
+	else
+		echo -e "${BRIGHT_YELLOW}No .bashrc copy.${RESET}"
+	fi
+
+	# Test login with the new user
+	if ask "${BRIGHT_GREEN}⚠️ Test a login as this user? ⚠️${RESET}" N; then
+		echo -e "${BRIGHT_CYAN}\nTesting: Logging in as ${username}${RESET}"
+		sudo su - "${username}"
+	fi
+}
+
+# Remove a user from the system
+alias deleteuser='sudo userdel'
+function wipeuser() {
+	local username="$1"
+
+	# If username is not provided, get the list of users and use createmenu
+	if [[ -z "${username}" ]]; then
+		echo -e "${BRIGHT_CYAN}Select a user to delete:${RESET}"
+		username=$(sudo awk -F: '$3 >= 1000 && $3 < 65534 {print $1}' /etc/passwd | createmenu)
+	fi
+
+	# If username is still empty (e.g. if the user cancels the menu selection), exit
+	if [[ -z "${username}" ]]; then
+		echo -e "${BRIGHT_RED}No user selected. Aborting.${RESET}"
+		return 1
+
+	# Check against this being the current user
+	elif [[ "${username}" == "${USER}" ]]; then
+		echo -e "${BRIGHT_RED}You cannot remove the currently logged-in user. Aborting.${RESET}"
+		return 1
+	fi
+
+	# Check if the user exists
+	if id "${username}" &>/dev/null; then
+
+		# Confirm deletion
+		if ask "${BRIGHT_RED}⚠️ Are you sure you want to delete user ${username} and all their data? ⚠️ This action cannot be undone! ⚠️${RESET}" N; then
+
+			# Kill all processes by the user
+			sudo pkill -U "${username}"
+
+			# Remove the user and their home directory
+			sudo userdel -rf "${username}"
+
+			# Remove the user from any additional groups
+			sudo delgroup "${username}" &>/dev/null
+
+			echo -e "${BRIGHT_GREEN}User ${username} and their home directory have been deleted.${RESET}"
+		else
+			echo -e "${BRIGHT_YELLOW}User deletion aborted.${RESET}"
+		fi
+	else
+		echo -e "${BRIGHT_RED}User ${username} does not exist.${RESET}"
+	fi
+}
+
+
+###
+#
 #######################################################
 # Set the ultimate amazing command prompt
 #######################################################
