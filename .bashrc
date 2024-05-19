@@ -829,6 +829,51 @@ function createuser() {
 		sudo su - "${username}"
 	fi
 }
+ Remove a user from the system
+alias deleteuser='sudo userdel'
+function wipeuser() {
+	local username="$1"
+
+	# If username is not provided, get the list of users and use createmenu
+	if [[ -z "${username}" ]]; then
+		echo -e "${BRIGHT_CYAN}Select a user to delete:${RESET}"
+		username=$(sudo awk -F: '$3 >= 1000 && $3 < 65534 {print $1}' /etc/passwd | createmenu)
+	fi
+
+	# If username is still empty (e.g. if the user cancels the menu selection), exit
+	if [[ -z "${username}" ]]; then
+		echo -e "${BRIGHT_RED}No user selected. Aborting.${RESET}"
+		return 1
+
+	# Check against this being the current user
+	elif [[ "${username}" == "${USER}" ]]; then
+		echo -e "${BRIGHT_RED}You cannot remove the currently logged-in user. Aborting.${RESET}"
+		return 1
+	fi
+
+	# Check if the user exists
+	if id "${username}" &>/dev/null; then
+
+		# Confirm deletion
+		if ask "${BRIGHT_RED}⚠️ Are you sure you want to delete user ${username} and all their data? ⚠️ This action cannot be undone! ⚠️${RESET}" N; then
+
+			# Kill all processes by the user
+			sudo pkill -U "${username}"
+
+			# Remove the user and their home directory
+			sudo userdel -rf "${username}"
+
+			# Remove the user from any additional groups
+			sudo delgroup "${username}" &>/dev/null
+
+			echo -e "${BRIGHT_GREEN}User ${username} and their home directory have been deleted.${RESET}"
+		else
+			echo -e "${BRIGHT_YELLOW}User deletion aborted.${RESET}"
+		fi
+	else
+		echo -e "${BRIGHT_RED}User ${username} does not exist.${RESET}"
+	fi
+}
 
 #######################################################
 # Set the ultimate amazing command prompt
