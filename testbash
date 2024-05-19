@@ -3,6 +3,8 @@ iatest=$(expr index "$-" i)
 
 ###########  Get bash update from github ###########
 function getbash {
+	sudo curl -sSL https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc --output $HOME/.bashrc | . ~/.bashrc
+}
 #REPO_URL="https://github.com/dnakeys/mybash.git"
 #BRANCH="main"  # Change this to your branch name
 #
@@ -14,7 +16,7 @@ function getbash {
 
 # grab updated bash 
 #curl -sSL "https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc" -o "$TEMP_FILE"
-curl -sSL https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc --output $HOME/.bashrc | rbrc
+
 # repalce bash with new
 #if [ -s "$TEMP_FILE" ]; then
 #    mv -f "$TEMP_FILE" "$BASHRC_FILE" # no confirm before saving

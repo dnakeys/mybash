@@ -1,6 +1,9 @@
 #!/bin/bash
 iatest=$(expr index "$-" i)
 
+function getbash {
+	sudo curl -sSL https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc --output $HOME/.bashrc | . ~/.bashrc
+}
 #######################################################
 # SOURCED ALIAS'S AND SCRIPTS BY zachbrowne.me
 #######################################################
@@ -114,7 +117,7 @@ alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo
 
 # Edit this .bashrc file
 alias ebrc='edit ~/.bashrc'
-
+alias rbrc='. ~/bashrc'
 # Show help for this .bashrc file
 alias hlp='less ~/.bashrc_help'
 
