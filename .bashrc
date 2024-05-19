@@ -477,21 +477,21 @@ function whatsmyip ()
 	echo -n "External IP: "
 	curl -s ifconfig.me
 }
+# Prints random height bars across the width of the screen
+# (great with lolcat application on new terminal windows)
+function sparkbars() {
+	columns=$(tput cols)
+	chars=▁▂▃▄▅▆▇█
+	for ((i = 1; i <= $columns; i++))
+	do
+		echo -n "${chars:RANDOM%${#chars}:1}"
+	done
+	echo
+}
 netinfo() {
 	echo "--------------- Network Information ---------------"
-	/sbin/ifconfig | awk /'inet addr/ {print $2}'
-	echo ""
-	/sbin/ifconfig | awk /'Bcast/ {print $3}'
-	echo ""
-	/sbin/ifconfig | awk /'inet addr/ {print $4}'
-	/sbin/ifconfig | awk /'HWaddr/ {print $4,$5}'
+	echo sparkbars
 	ip a | awk '/^[0-9]+:/{gsub(/:/,"",$2); device=$2} /^[[:space:]]*inet /{print "Device: " device "  IP: " $2}' # shows all devices with ip's
-# '
-# 	echo ""
-# 	/sbin/ifconfig | awk /'Bcast/ {print $3}'
-# 	echo ""
-# 	/sbin/ifconfig | awk /'inet addr/ {print $4}'
-# 	/sbin/ifconfig | awk /'HWaddr/ {print $4,$5}'
 	echo "---------------------------------------------------"
 }
 # View Apache logs
