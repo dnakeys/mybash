@@ -1,7 +1,7 @@
 #!/bin/bash
 iatest=$(expr index "$-" i)
 
-########### automaticaly get bash update from github ###########
+###########  Get bash update from github ###########
 function reloadbashrc() {
 REPO_URL="https://github.com/dnakeys/mybash.git"
 BRANCH="main"  # Change this to your branch name
@@ -19,9 +19,11 @@ curl -sSL "https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc" -o "$T
 if [ -s "$TEMP_FILE" ]; then
     mv -f "$TEMP_FILE" "$BASHRC_FILE" # no confirm before saving
    # mv  "$TEMP_FILE" "$BASHRC_FILE" # will ask for confrm before saving
-    echo "Updated .bashrc successfully."
+    echo "Updated .bashrc successfully."; then
+	~/.bashrc
 else
     echo "Failed to update .bashrc."
+	
 fi
 }
 ####### end of update #########
@@ -43,6 +45,24 @@ if [ -f /usr/share/bash-completion/bash_completion ]; then
 elif [ -f /etc/bash_completion ]; then
 	. /etc/bash_completion
 fi
+# Check if a command or alias exists
+function cmd-exists() {
+	# If no arguments or just '--strict' is provided, show help message
+	if [[ -z "${1}" || (${#} -eq 1 && "${1}" == "--strict") ]]; then
+		echo -e "${BRIGHT_WHITE}cmd-exists:${RESET} Checks if a command or alias exists"
+		echo -e "${BRIGHT_WHITE}Options:${RESET}"
+		echo -e "  ${BRIGHT_YELLOW}--strict${RESET} or ${BRIGHT_YELLOW}-s${RESET} checks for executable commands only ${BRIGHT_RED}excluding aliases${RESET}"
+		echo -e "${BRIGHT_WHITE}Usage examples:${RESET}"
+		echo -e "  Check any command or alias:"
+		echo -e "    ${BRIGHT_GREEN}cmd-exists ${BRIGHT_YELLOW}ls${RESET}"
+		echo -e "  Check executable only ${BRIGHT_RED}(strict mode)${RESET}:"
+		echo -e "    ${BRIGHT_GREEN}cmd-exists ${BRIGHT_YELLOW}--strict ${BRIGHT_YELLOW}grep${RESET}"
+		echo -e "  Display this help message:"
+		echo -e "    ${BRIGHT_GREEN}cmd-exists${RESET}"
+		return 2  # Return code 2 to indicate incorrect usage
+	fi
+	#
+
 
 #######################################################
 # EXPORTS
@@ -76,13 +96,18 @@ if [[ $iatest -gt 0 ]]; then bind "set completion-ignore-case on"; fi
 if [[ $iatest -gt 0 ]]; then bind "set show-all-if-ambiguous On"; fi
 
 # Set the default editor
-export EDITOR=nvim
-export VISUAL=nvim
+export EDITOR=nano
+export VISUAL=nano
 alias pico='edit'
 alias spico='sedit'
 alias nano='edit'
 alias snano='sedit'
 alias vim='nvim'
+# Set some defaults for nano
+# NOTE: Depending on the version of nano you have, --linenumbers and --suspend is helpful
+if cmd-exists --strict nano; then
+	alias {n,nano}='nano --smarthome --multibuffer --const --autoindent'
+fi
 
 # Replace batcat with cat on Fedora as batcat is not available as a RPM in any form
 if command -v lsb_release >/dev/null; then
@@ -252,6 +277,51 @@ alias clickpaste='sleep 3; xdotool type "$(xclip -o -selection clipboard)"'
 alias kssh="kitty +kitten ssh"
 
 #######################################################
+### SYSTEMD ALIASES
+#######################################################
+
+if cmd-exists --strict systemctl; then
+	# Get a list of all services
+	alias services='systemctl list-units --type=service --state=running,failed'
+	alias servicesall='systemctl list-units --type=service'
+
+	# Find what systemd services have failed
+	alias {failed,servicefailed}='systemctl --failed'
+
+	# Get the status of a services
+	alias servicestatus='sudo systemctl status'
+
+	# Start a service and enable automatic startup at boot
+	alias serviceenable='sudo systemctl enable --now'
+
+	# Start a service
+	alias servicestart='sudo systemctl start'
+
+	# Stop a service
+	alias servicestop='sudo systemctl stop'
+
+	# Forcefully terminate a service
+	alias servicekill='sudo systemctl kill'
+
+	# Stop and restart a service
+	alias servicerestart='sudo systemctl restart'
+
+	# Reload a service's configuration (soft restart)
+	alias servicereload='sudo systemctl reload'
+
+	# Clear system log entries from the systemd journal
+	alias clearsystemlogs='echo -ne "${BRIGHT_BLUE}Before${RESET}: "; journalctl --disk-usage; sudo journalctl --rotate; sudo journalctl --vacuum-time=1s; echo -ne "${BRIGHT_BLUE}After${RESET}: "; journalctl --disk-usage'
+
+	# If SSH is installed...
+	if cmd-exists --strict ssh; then
+		# Create aliases to start/enable and stop/disable the SSH server
+		alias sshstatus='systemctl status sshd.service'
+		alias sshstart='sudo systemctl start sshd.service && sudo systemctl enable sshd.service'
+		alias sshstop='sudo systemctl stop sshd.service && sudo systemctl disable sshd.service'
+		alias sshrestart='sudo systemctl restart sshd.service && sudo systemctl enable sshd.service'
+	fi
+
+#######################################################
 # SPECIAL FUNCTIONS
 #######################################################
 # Extracts any archive(s) (if unp isn't installed)
@@ -277,7 +347,31 @@ extract() {
 		fi
 	done
 }
-
+# Depending on the installed package managers, set up some package aliases
+if cmd-exists --strict nala; then # Debian/Ubuntu/Raspbian
+	# Link: https://gitlab.com/volian/nala
+	# Link: https://itsfoss.com/nala/
+	alias has='nala show'
+	alias pkgupdateall='sudo nala update && sudo nala upgrade && if type pacstall >/dev/null 2>&1; then pacstall --upgrade; fi'
+	alias pkgupdate='sudo nala update'
+	alias pkginstall='sudo nala install --install-suggests'
+	alias pkgremove='sudo nala remove'
+	alias pkgclean='sudo nala clean --fix-broken'
+	alias pkgsearch='sudo nala search'
+	alias pkglist='sudo nala list --installed'
+	alias pkgmirrors='sudo nala fetch'
+elif cmd-exists --strict apt; then # Debian/Ubuntu/Raspbian
+	# Link: https://itsfoss.com/apt-command-guide/
+	alias has='apt show'
+	alias pkgupdateall='sudo apt update --assume-yes && sudo apt upgrade --assume-yes && if type pacstall >/dev/null 2>&1; then pacstall --upgrade; fi && if type tldr >/dev/null 2>&1; then tldr --update; fi'
+	alias pkgupdate='sudo apt-get install --only-upgrade'
+	alias pkginstall='sudo apt install'
+	alias pkgremove='sudo apt remove'
+	alias pkgclean='sudo apt autoremove'
+	alias pkgsearch='sudo apt search'
+	alias pkglist='sudo apt list --installed'
+	alias pkgcheck='sudo apt update --assume-yes && apt list --upgradable'
+fi
 # Searches for text in all files in the current folder
 ftext() {
 	# -i case-insensitive
@@ -491,6 +585,32 @@ function whatsmyip ()
 	echo -n "External IP: "
 	curl -s ifconfig.me
 }
+	# Flushing and restart the DNS cache if installed and running
+	function flushdns() {
+		# Check if systemd-resolved is available
+		if cmd-exists --strict systemd-resolve; then
+			# Check if systemd-resolved service is active
+			if systemctl is-active systemd-resolved >/dev/null; then
+				# Flush DNS cache and restart systemd-resolved
+				sudo systemd-resolve --flush-caches
+				sudo systemctl restart systemd-resolved
+				echo "DNS cache flushed and systemd-resolved restarted"
+			else
+				echo "systemd-resolved is not active, unable to flush DNS cache"
+			fi
+function netinfo()
+{
+	echo "--------------- Network Information ---------------"
+	ip a | awk '/^[0-9]+:/{gsub(/:/,"",$2); device=$2} /^[[:space:]]*inet /{print "Device: " device "  IP: " $2}' # shows all devices with ip's
+  	echo ""
+ 	/sbin/ifconfig | awk /'Bcast/ {print $3}'
+ 	echo ""
+ 	/sbin/ifconfig | awk /'inet addr/ {print $4}'
+ 	/sbin/ifconfig | awk /'HWaddr/ {print $4,$5}'
+	echo "---------------------------------------------------"
+ }
+# Show open ports
+alias ports='netstat -tulanp'
 
 # View Apache logs
 apachelog() {
@@ -573,6 +693,239 @@ lazyg() {
 	git commit -m "$1"
 	git push
 }
+# Send file(s) to the trash
+# Link: https://www.tecmint.com/trash-cli-manage-linux-trash-from-command-line/
+function trash() {
+	# Check for the presence of arguments
+	if [[ $# -eq 0 ]]; then
+		echo -e "${BRIGHT_WHITE}trash:${RESET} Send files to the trash"
+		echo -e "${BRIGHT_WHITE}Usage:${BRIGHT_CYAN} trash${RESET} ${BRIGHT_YELLOW}<filename1> [filename2] ...${RESET}"
+		return 1
+	fi
+
+	# Check if trash-cli exists...
+	# https://github.com/andreafrancia/trash-cli
+	if cmd-exists --strict trash-put; then
+		trash-put "${@}"
+	# Check if rem exists...
+	# Link: https://github.com/quackduck/rem
+	elif cmd-exists --strict rem; then
+		rem "${@}"
+	# Check if gio trash exists (glib2)...
+	# Link: https://wiki.archlinux.org/title/Trash-cli#gio_trash
+	elif cmd-exists --strict gio; then
+		gio trash "${@}"
+	# Check if kioclient5 exists (kde-cli-tools)...
+	# Link: https://wiki.archlinux.org/title/Trash-cli#kioclient5
+	elif cmd-exists --strict kioclient5; then
+		kioclient5 move "${@}" trash:/
+	elif [[ -d $HOME/.local/share/Trash/files ]]; then
+		mv "${@}" $HOME/.local/share/Trash/files/
+	elif [[ -d $HOME/.local/share/trash/files ]]; then
+		mv "${@}" $HOME/.local/share/trash/files/
+	elif [[ -d $HOME/.Trash ]]; then
+		mv "${@}" $HOME/.Trash/
+	elif [[ -d $HOME/.trash ]]; then
+		mv "${@}" $HOME/.trash/
+	else
+		mkdir $HOME/.trash
+		mv "${@}" $HOME/.trash/
+	fi
+}
+
+# Display the contents of the trash
+function trashlist() {
+	# Check if trash-cli exists...
+	# https://github.com/andreafrancia/trash-cli
+	if cmd-exists --strict trash-list; then
+		trash-list
+	# Check if rem exists...
+	# Link: https://github.com/quackduck/rem
+	elif cmd-exists --strict rem; then
+		rem -l
+	# Check if gio trash exists (glib2)...
+	# Link: https://wiki.archlinux.org/title/Trash-cli#gio_trash
+	elif cmd-exists --strict gio; then
+		gio list trash:///
+	# Check if kioclient5 exists (kde-cli-tools)...
+	# Link: https://wiki.archlinux.org/title/Trash-cli#kioclient5
+	elif cmd-exists --strict kioclient5; then
+		kioclient5 ls trash:/
+	# Check for alternative trash directories and list files
+	elif [[ -d ${HOME}/.local/share/Trash/files ]]; then
+		ls -l ${HOME}/.local/share/Trash/files/
+	elif [[ -d ${HOME}/.local/share/trash/files ]]; then
+		ls -l ${HOME}/.local/share/trash/files/
+	elif [[ -d ${HOME}/.Trash ]]; then
+		ls -l ${HOME}/.Trash/
+	elif [[ -d ${HOME}/.trash ]]; then
+		ls -l ${HOME}/.trash/
+	else
+		echo -e "${BRIGHT_RED}Error: ${BRIGHT_CYAN}No trash directory found${RESET}"
+	fi
+}
+
+# Empty and permanently delete all the files in the trash
+function trashempty() {
+	# Ask for user confirmation before deleting trash
+	if ask "${BRIGHT_WHITE}Are you sure you want to ${BRIGHT_MAGENTA}permanently delete${BRIGHT_WHITE} all the files in the trash? ${BRIGHT_RED}This action cannot be undone.${RESET}" "N"; then
+		# Check if trash-cli exists...
+		# https://github.com/andreafrancia/trash-cli
+		if cmd-exists --strict trash-empty; then
+			trash-empty
+		# Check if rem exists...
+		# Link: https://github.com/quackduck/rem
+		elif cmd-exists --strict rem; then
+			rem --empty
+		# Check if gio trash exists (glib2)...
+		# Link: https://wiki.archlinux.org/title/Trash-cli#gio_trash
+		elif cmd-exists --strict gio; then
+			gio trash --empty
+		# Check if kioclient5 exists (kde-cli-tools)...
+		# Link: https://wiki.archlinux.org/title/Trash-cli#kioclient5
+		elif cmd-exists --strict kioclient5; then
+			kioclient5 empty trash:/
+		# Check for alternative trash directories and delete files
+		elif [[ -d ${HOME}/.local/share/Trash/files ]]; then
+			rm -rf ${HOME}/.local/share/Trash/files/{..?*,.[!.]*,*} 2>/dev/null
+		elif [[ -d ${HOME}/.local/share/trash/files ]]; then
+			rm -rf ${HOME}/.local/share/trash/files/{..?*,.[!.]*,*} 2>/dev/null
+		elif [[ -d ${HOME}/.Trash ]]; then
+			rm -rf ${HOME}/.Trash/{..?*,.[!.]*,*} 2>/dev/null
+		elif [[ -d ${HOME}/.trash ]]; then
+			rm -rf ${HOME}/.trash/{..?*,.[!.]*,*} 2>/dev/null
+		else
+			# No supported method found for emptying trash
+			echo -e "${BRIGHT_RED}Error: ${BRIGHT_CYAN}No trash directory or supported application found${RESET}"
+		fi
+	else
+		# Operation was cancelled by the user
+		echo -e "${BRIGHT_RED}Operation cancelled.${RESET}"
+	fi
+}
+
+# Restore the trash only is trash-cli is installed
+# trash-cli - Command Line Interface to FreeDesktop.org Trash
+# Link: https://github.com/andreafrancia/trash-cli
+if cmd-exists --strict restore-trash; then
+	alias trashrestore='restore-trash'
+elif cmd-exists --strict trash-restore; then
+	alias trashrestore='trash-restore'
+fi
+# Interactively create, configure, and test a new Linux user
+function createuser() {
+	sudo true
+	local username
+
+	# Check if a username was passed as a parameter
+	if [ "$#" -eq 1 ]; then
+		username="$1"
+	else
+		read -r -p $'${BRIGHT_CYAN}Enter the username for the new user:${RESET} ' username
+	fi
+
+	# Check if the user already exists
+	if id "${username}" &>/dev/null; then
+		echo -e "${BRIGHT_RED}User ${username} already exists. Aborting.${RESET}"
+		return 1
+	fi
+
+	# Confirm if the user should be created with a home directory
+	if ask "${BRIGHT_GREEN}Create a new user with a home folder?${RESET}" N; then
+		sudo useradd -m "${username}"
+	else
+		echo -e "${BRIGHT_RED}User creation aborted.${RESET}"
+		return 1
+	fi
+
+	# Set the user's password
+	echo -e "${BRIGHT_YELLOW}\nSet the user's password:${RESET}"
+	sudo passwd "${username}"
+
+	# Ask if the user should change their password upon next login
+	if ask "${BRIGHT_GREEN}Force user to change password on next login?${RESET}" N; then
+		sudo passwd -e "${username}"
+	else
+		echo -e "${BRIGHT_YELLOW}No change password enforced.${RESET}"
+	fi
+
+	# Ask if the user should have root (sudo) access
+	if ask "${BRIGHT_MAGENTA}⚠️ Give user root access? ⚠️${RESET}" N; then
+		sudo usermod -a -G sudo "${username}"
+	else
+		echo -e "${BRIGHT_YELLOW}No root access granted.${RESET}"
+	fi
+
+	# Change the user's login shell to bash
+	echo -e "${BRIGHT_CYAN}\nChange user’s login shell to bash${RESET}"
+	sudo usermod --shell /bin/bash "${username}"
+
+	# Verify the user's settings
+	echo -e "${BRIGHT_YELLOW}\nVerifying user settings:${RESET}"
+	sudo grep "${username}" /etc/passwd
+
+	# Ask if you should copy over the local .bashrc to the new user
+	if ask "${BRIGHT_GREEN}Copy over your local .bashrc?${RESET}" N; then
+		sudo cp ~/.bashrc /home/"${username}"/
+		sudo chown "${username}":"${username}" /home/"${username}"/.bashrc
+		sudo chmod 644 /home/"${username}"/.bashrc
+	else
+		echo -e "${BRIGHT_YELLOW}No .bashrc copy.${RESET}"
+	fi
+
+	# Test login with the new user
+	if ask "${BRIGHT_GREEN}⚠️ Test a login as this user? ⚠️${RESET}" N; then
+		echo -e "${BRIGHT_CYAN}\nTesting: Logging in as ${username}${RESET}"
+		sudo su - "${username}"
+	fi
+}
+
+# Remove a user from the system
+alias deleteuser='sudo userdel'
+function wipeuser() {
+	local username="$1"
+
+	# If username is not provided, get the list of users and use createmenu
+	if [[ -z "${username}" ]]; then
+		echo -e "${BRIGHT_CYAN}Select a user to delete:${RESET}"
+		username=$(sudo awk -F: '$3 >= 1000 && $3 < 65534 {print $1}' /etc/passwd | createmenu)
+	fi
+
+	# If username is still empty (e.g. if the user cancels the menu selection), exit
+	if [[ -z "${username}" ]]; then
+		echo -e "${BRIGHT_RED}No user selected. Aborting.${RESET}"
+		return 1
+
+	# Check against this being the current user
+	elif [[ "${username}" == "${USER}" ]]; then
+		echo -e "${BRIGHT_RED}You cannot remove the currently logged-in user. Aborting.${RESET}"
+		return 1
+	fi
+
+	# Check if the user exists
+	if id "${username}" &>/dev/null; then
+
+		# Confirm deletion
+		if ask "${BRIGHT_RED}⚠️ Are you sure you want to delete user ${username} and all their data? ⚠️ This action cannot be undone! ⚠️${RESET}" N; then
+
+			# Kill all processes by the user
+			sudo pkill -U "${username}"
+
+			# Remove the user and their home directory
+			sudo userdel -rf "${username}"
+
+			# Remove the user from any additional groups
+			sudo delgroup "${username}" &>/dev/null
+
+			echo -e "${BRIGHT_GREEN}User ${username} and their home directory have been deleted.${RESET}"
+		else
+			echo -e "${BRIGHT_YELLOW}User deletion aborted.${RESET}"
+		fi
+	else
+		echo -e "${BRIGHT_RED}User ${username} does not exist.${RESET}"
+	fi
+}
+
 
 #######################################################
 # Set the ultimate amazing command prompt
