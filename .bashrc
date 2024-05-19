@@ -762,6 +762,73 @@ function createuser() {
 		sudo su - "${username}"
 	fi
 }
+# Interactively create, configure, and test a new Linux user
+function createuser() {
+	sudo true
+	local username
+
+	# Check if a username was passed as a parameter
+	if [ "$#" -eq 1 ]; then
+		username="$1"
+	else
+		read -r -p $'${BRIGHT_CYAN}Enter the username for the new user:${RESET} ' username
+	fi
+
+	# Check if the user already exists
+	if id "${username}" &>/dev/null; then
+		echo -e "${BRIGHT_RED}User ${username} already exists. Aborting.${RESET}"
+		return 1
+	fi
+
+	# Confirm if the user should be created with a home directory
+	if ask "${BRIGHT_GREEN}Create a new user with a home folder?${RESET}" N; then
+		sudo useradd -m "${username}"
+	else
+		echo -e "${BRIGHT_RED}User creation aborted.${RESET}"
+		return 1
+	fi
+
+	# Set the user's password
+	echo -e "${BRIGHT_YELLOW}\nSet the user's password:${RESET}"
+	sudo passwd "${username}"
+
+	# Ask if the user should change their password upon next login
+	if ask "${BRIGHT_GREEN}Force user to change password on next login?${RESET}" N; then
+		sudo passwd -e "${username}"
+	else
+		echo -e "${BRIGHT_YELLOW}No change password enforced.${RESET}"
+	fi
+
+	# Ask if the user should have root (sudo) access
+	if ask "${BRIGHT_MAGENTA}⚠️ Give user root access? ⚠️${RESET}" N; then
+		sudo usermod -a -G sudo "${username}"
+	else
+		echo -e "${BRIGHT_YELLOW}No root access granted.${RESET}"
+	fi
+
+	# Change the user's login shell to bash
+	echo -e "${BRIGHT_CYAN}\nChange user’s login shell to bash${RESET}"
+	sudo usermod --shell /bin/bash "${username}"
+
+	# Verify the user's settings
+	echo -e "${BRIGHT_YELLOW}\nVerifying user settings:${RESET}"
+	sudo grep "${username}" /etc/passwd
+
+	# Ask if you should copy over the local .bashrc to the new user
+	if ask "${BRIGHT_GREEN}Copy over your local .bashrc?${RESET}" N; then
+		sudo cp ~/.bashrc /home/"${username}"/
+		sudo chown "${username}":"${username}" /home/"${username}"/.bashrc
+		sudo chmod 644 /home/"${username}"/.bashrc
+	else
+		echo -e "${BRIGHT_YELLOW}No .bashrc copy.${RESET}"
+	fi
+
+	# Test login with the new user
+	if ask "${BRIGHT_GREEN}⚠️ Test a login as this user? ⚠️${RESET}" N; then
+		echo -e "${BRIGHT_CYAN}\nTesting: Logging in as ${username}${RESET}"
+		sudo su - "${username}"
+	fi
+}
 
 #######################################################
 # Set the ultimate amazing command prompt
