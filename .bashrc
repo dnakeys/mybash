@@ -490,8 +490,9 @@ function sparkbars() {
 }
 netinfo() {
 	echo "--------------- Network Information ---------------"
-	echo sparkbars
+    sparkbars
 	ip a | awk '/^[0-9]+:/{gsub(/:/,"",$2); device=$2} /^[[:space:]]*inet /{print "Device: " device "  IP: " $2}' # shows all devices with ip's
+	saprkbars
 	echo "---------------------------------------------------"
 }
 # View Apache logs
