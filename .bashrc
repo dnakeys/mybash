@@ -829,7 +829,7 @@ function createuser() {
 		sudo su - "${username}"
 	fi
 }
- Remove a user from the system
+ #Remove a user from the system
 alias deleteuser='sudo userdel'
 function wipeuser() {
 	local username="$1"
