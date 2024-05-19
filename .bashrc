@@ -60,7 +60,7 @@ function cmd-exists() {
 		echo -e "    ${BRIGHT_GREEN}cmd-exists${RESET}"
 		return 2  # Return code 2 to indicate incorrect usage
 	fi
-
+}
 #######################################################
 # EXPORTS
 #######################################################
