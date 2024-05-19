@@ -2,7 +2,7 @@
 iatest=$(expr index "$-" i)
 
 ###########  Get bash update from github ###########
-function reloadbashrc() {
+function getbash() {
 REPO_URL="https://github.com/dnakeys/mybash.git"
 BRANCH="main"  # Change this to your branch name
 #
@@ -19,7 +19,7 @@ curl -sSL "https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc" -o "$T
 if [ -s "$TEMP_FILE" ]; then
     mv -f "$TEMP_FILE" "$BASHRC_FILE" # no confirm before saving
    # mv  "$TEMP_FILE" "$BASHRC_FILE" # will ask for confrm before saving
-    echo "Updated .bashrc successfully."; then
+    echo "Updated .bashrc successfully."
 	~/.bashrc
 else
     echo "Failed to update .bashrc."
@@ -163,7 +163,8 @@ alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo
 
 # Edit this .bashrc file
 alias ebrc='edit ~/.bashrc'
-alias rbrc='reloadbashrc'
+alias rbrc='. ~/.bashrc'
+alias gbrc='getbash'
 
 # Show help for this .bashrc file
 alias hlp='less ~/.bashrc_help'
