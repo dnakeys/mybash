@@ -45,8 +45,8 @@ shopt -s histappend
 PROMPT_COMMAND='history -a'
 
 # Allow ctrl-S for history navigation (with ctrl-R)
-[[ $- == *i* ]] && stty -ixon
-
+#[[ $- == *i* ]] && stty -ixon
+#
 # Ignore case on auto-completion
 # Note: bind used instead of sticking these in .inputrc
 if [[ $iatest -gt 0 ]]; then bind "set completion-ignore-case on"; fi
@@ -55,13 +55,18 @@ if [[ $iatest -gt 0 ]]; then bind "set completion-ignore-case on"; fi
 if [[ $iatest -gt 0 ]]; then bind "set show-all-if-ambiguous On"; fi
 
 # Set the default editor
-export EDITOR=nvim
-export VISUAL=nvim
+export EDITOR=nano
+export VISUAL=nano
 alias pico='edit'
 alias spico='sedit'
 alias nano='edit'
 alias snano='sedit'
 alias vim='nvim'
+# Set some defaults for nano
+# NOTE: Depending on the version of nano you have, --linenumbers and --suspend is helpful
+if cmd-exists --strict nano; then
+	alias {n,nano}='nano --smarthome --multibuffer --const --autoindent'
+fi
 
 # Replace batcat with cat on Fedora as batcat is not available as a RPM in any form
 if command -v lsb_release >/dev/null; then
@@ -119,6 +124,7 @@ alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo
 alias ebrc='edit ~/.bashrc'
 alias rbrc='. ~/bashrc'
 alias gtbrc='sudo curl -sSL https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc --output $HOME/.bashrc | . ~/.bashrc'
+
 # Show help for this .bashrc file
 alias hlp='less ~/.bashrc_help'
 
