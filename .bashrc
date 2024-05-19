@@ -3,39 +3,10 @@ iatest=$(expr index "$-" i)
 
 #######################################################
 # SOURCED ALIAS'S AND SCRIPTS BY zachbrowne.me
-# if [ -f ~/.bash_aliases ]; then
-#     . ~/.bash_aliases
-# fi
-# if putting all aliases/functions/colors/etc in seperate file
-
 #######################################################
-# # Create an array of potential dotfiles
-
-# dotfiles=(
-
-# "${HOME}/.bash_aliases"
-
-# "${HOME}/.bash_functions"
-
-# "${HOME}/.bashrc_colors"
-
-# "${HOME}/.text_functions"
-
-# )
-
-# # Work through our list of dotfiles, if a match is found, load it
-
-# # shellcheck source=/dev/null
-
-# for dotfile in "${dotfiles[@]}"; do
-
-# [[ -r "${dotfile}" ]] && source "${dotfile}"
-
-# done
-
-# unset dotfiles; unset -v dotfile
-
-
+if [ -f /usr/bin/fastfetch ]; then
+	fastfetch
+fi
 
 # Source global definitions
 if [ -f /etc/bashrc ]; then
@@ -48,29 +19,7 @@ if [ -f /usr/share/bash-completion/bash_completion ]; then
 elif [ -f /etc/bash_completion ]; then
 	. /etc/bash_completion
 fi
-########### automaticaly get bash update from github ###########
-#
-REPO_URL="https://github.com/dnakeys/mybash.git"
-BRANCH="main"  # Change this to your branch name
-#
-# Path to .bashrc file
-BASHRC_FILE="$HOME/.bashrc"
 
-# temp save bash file
-TEMP_FILE=$(mktemp)
-
-# grab updated bash 
-curl -sSL "https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc" -o "$TEMP_FILE"
-
-# repalce bash with new
-if [ -s "$TEMP_FILE" ]; then
-    mv -f "$TEMP_FILE" "$BASHRC_FILE" # no confirm before saving
-   # mv  "$TEMP_FILE" "$BASHRC_FILE" # will ask for confrm before saving
-    echo "Updated .bashrc successfully."
-else
-    echo "Failed to update .bashrc."
-fi
-####### end of update #########
 #######################################################
 # EXPORTS
 #######################################################
@@ -103,19 +52,19 @@ if [[ $iatest -gt 0 ]]; then bind "set completion-ignore-case on"; fi
 if [[ $iatest -gt 0 ]]; then bind "set show-all-if-ambiguous On"; fi
 
 # Set the default editor
-export EDITOR="/usr/bin/nano"
+export EDITOR=nvim
 export VISUAL=nvim
 alias pico='edit'
 alias spico='sedit'
-alias nano='nano-tiny'
-alias snano='sudo nano-tiny'
+alias nano='edit'
+alias snano='sedit'
 alias vim='nvim'
 
 # Replace batcat with cat on Fedora as batcat is not available as a RPM in any form
 if command -v lsb_release >/dev/null; then
 	DISTRIBUTION=$(lsb_release -si)
 
-	if [ "$DISTRIBUTION" = "Fedora" ]; then
+	if [ "$DISTRIBUTION" = "Fedora" ] || [ "$DISTRIBUTION" = "Arch" ]; then
 		alias cat='bat'
 	else
 		alias cat='batcat'
@@ -165,7 +114,7 @@ alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo
 
 # Edit this .bashrc file
 alias ebrc='edit ~/.bashrc'
-alias reloadbash='. ~/.bashrc'
+
 # Show help for this .bashrc file
 alias hlp='less ~/.bashrc_help'
 
@@ -187,8 +136,6 @@ alias freshclam='sudo freshclam'
 alias vi='nvim'
 alias svi='sudo vi'
 alias vis='nvim "+set si"'
-alias nst='netstat -tulpn'
-alias sysupdate='sudo apt-get update; sudo apt-get upgrade -y; sudo apt-get autoremove -y; sudo apt-get autoclean -y'
 
 # Change directory aliases
 alias home='cd ~'
@@ -219,10 +166,6 @@ alias ll='ls -Fls'                # long listing format
 alias labc='ls -lap'              #alphabetical sort
 alias lf="ls -l | egrep -v '^d'"  # files only
 alias ldir="ls -l | egrep '^d'"   # directories only
-## Colorize the grep command output for ease of use (good for log files)##
-alias grep='grep --color=auto'
-alias egrep='egrep --color=auto'
-alias fgrep='fgrep --color=auto'
 
 # alias chmod commands
 alias mx='chmod a+x'
@@ -286,33 +229,6 @@ alias kssh="kitty +kitten ssh"
 #######################################################
 # SPECIAL FUNCTIONS
 #######################################################
-
-# Use the best version of pico installed
-edit() {
-	if [[ $(type -t jpico) == "file" ]] || ([[ $(type -t jpico) == "alias" ]] && [[ -n $(which jpico) ]]); then
-		# Use JOE text editor http://joe-editor.sourceforge.net/
-		jpico -nonotice -linums -nobackups "$@"
-	elif [[ $(type -t nano) == "file" ]] || ([[ $(type -t nano) == "alias" ]] && [[ -n $(which nano) ]]); then
-		nano -c "$@"
-	elif [[ $(type -t pico) == "file" ]] || ([[ $(type -t pico) == "alias" ]] && [[ -n $(which pico) ]]); then
-		pico "$@"
-	else
-		nvim "$@"
-	fi
-}
-sedit() {
-	if [ "$(type -t jpico)" = "file" ]; then
-		# Use JOE text editor http://joe-editor.sourceforge.net/
-		sudo jpico -nonotice -linums -nobackups "$@"
-	elif [ "$(type -t nano)" = "file" ]; then
-		sudo nano -c "$@"
-	elif [ "$(type -t pico)" = "file" ]; then
-		sudo pico "$@"
-	else
-		sudo nvim "$@"
-	fi
-}
-
 # Extracts any archive(s) (if unp isn't installed)
 extract() {
 	for archive in "$@"; do
@@ -407,15 +323,15 @@ up() {
 	cd $d
 }
 
-#Automatically do an ls after each cd
-# cd ()
-# {
-# 	if [ -n "$1" ]; then
-# 		builtin cd "$@" && ls
-# 	else
-# 		builtin cd ~ && ls
-# 	fi
-# }
+# Automatically do an ls after each cd, z, or zoxide
+cd ()
+{
+	if [ -n "$1" ]; then
+		builtin cd "$@" && ls
+	else
+		builtin cd ~ && ls
+	fi
+}
 
 # Returns the last 2 fields of the working directory
 pwdtail() {
@@ -423,42 +339,38 @@ pwdtail() {
 }
 
 # Show the current distribution
-distribution() {
-	local dtype
-	# Assume unknown
-	dtype="unknown"
+distribution ()
+{
+	local dtype="unknown"  # Default to unknown
 
-	# First test against Fedora / RHEL / CentOS / generic Redhat derivative
-	if [ -r /etc/rc.d/init.d/functions ]; then
-		source /etc/rc.d/init.d/functions
-		[ zz$(type -t passed 2>/dev/null) == "zzfunction" ] && dtype="redhat"
-
-	# Then test against SUSE (must be after Redhat,
-	# I've seen rc.status on Ubuntu I think? TODO: Recheck that)
-	elif [ -r /etc/rc.status ]; then
-		source /etc/rc.status
-		[ zz$(type -t rc_reset 2>/dev/null) == "zzfunction" ] && dtype="suse"
-
-	# Then test against Debian, Ubuntu and friends
-	elif [ -r /lib/lsb/init-functions ]; then
-		source /lib/lsb/init-functions
-		[ zz$(type -t log_begin_msg 2>/dev/null) == "zzfunction" ] && dtype="debian"
-
-	# Then test against Gentoo
-	elif [ -r /etc/init.d/functions.sh ]; then
-		source /etc/init.d/functions.sh
-		[ zz$(type -t ebegin 2>/dev/null) == "zzfunction" ] && dtype="gentoo"
-
-	# For Mandriva we currently just test if /etc/mandriva-release exists
-	# and isn't empty (TODO: Find a better way :)
-	elif [ -s /etc/mandriva-release ]; then
-		dtype="mandriva"
-
-	# For Slackware we currently just test if /etc/slackware-version exists
-	elif [ -s /etc/slackware-version ]; then
-		dtype="slackware"
-
+	# Use /etc/os-release for modern distro identification
+	if [ -r /etc/os-release ]; then
+		source /etc/os-release
+		case $ID in
+			fedora|rhel|centos)
+				dtype="redhat"
+				;;
+			sles|opensuse*)
+				dtype="suse"
+				;;
+			ubuntu|debian)
+				dtype="debian"
+				;;
+			gentoo)
+				dtype="gentoo"
+				;;
+			arch)
+				dtype="arch"
+				;;
+			slackware)
+				dtype="slackware"
+				;;
+			*)
+				# If ID is not recognized, keep dtype as unknown
+				;;
+		esac
 	fi
+
 	echo $dtype
 }
 
@@ -467,31 +379,39 @@ ver() {
 	local dtype
 	dtype=$(distribution)
 
-	if [ $dtype == "redhat" ]; then
-		if [ -s /etc/redhat-release ]; then
-			cat /etc/redhat-release && uname -a
-		else
-			cat /etc/issue && uname -a
-		fi
-	elif [ $dtype == "suse" ]; then
-		cat /etc/SuSE-release
-	elif [ $dtype == "debian" ]; then
-		lsb_release -a
-		# sudo cat /etc/issue && sudo cat /etc/issue.net && sudo cat /etc/lsb_release && sudo cat /etc/os-release # Linux Mint option 2
-	elif [ $dtype == "gentoo" ]; then
-		cat /etc/gentoo-release
-	elif [ $dtype == "mandriva" ]; then
-		cat /etc/mandriva-release
-	elif [ $dtype == "slackware" ]; then
-		cat /etc/slackware-version
-	else
-		if [ -s /etc/issue ]; then
-			cat /etc/issue
-		else
-			echo "Error: Unknown distribution"
-			exit 1
-		fi
-	fi
+	case $dtype in
+		"redhat")
+			if [ -s /etc/redhat-release ]; then
+				cat /etc/redhat-release
+			else
+				cat /etc/issue
+			fi
+			uname -a
+			;;
+		"suse")
+			cat /etc/SuSE-release
+			;;
+		"debian")
+			lsb_release -a
+			;;
+		"gentoo")
+			cat /etc/gentoo-release
+			;;
+		"arch")
+			cat /etc/os-release
+			;;
+		"slackware")
+			cat /etc/slackware-version
+			;;
+		*)
+			if [ -s /etc/issue ]; then
+				cat /etc/issue
+			else
+				echo "Error: Unknown distribution"
+				exit 1
+			fi
+			;;
+	esac
 }
 
 # Automatically install the needed support files for this .bashrc file
@@ -499,65 +419,40 @@ install_bashrc_support() {
 	local dtype
 	dtype=$(distribution)
 
-	if [ $dtype == "redhat" ]; then
-		sudo yum install multitail tree joe
-	elif [ $dtype == "suse" ]; then
-		sudo zypper install multitail
-		sudo zypper install tree
-		sudo zypper install joe
-	elif [ $dtype == "debian" ]; then
-		sudo apt-get install multitail tree joe
-	elif [ $dtype == "gentoo" ]; then
-		sudo emerge multitail
-		sudo emerge tree
-		sudo emerge joe
-	elif [ $dtype == "mandriva" ]; then
-		sudo urpmi multitail
-		sudo urpmi tree
-		sudo urpmi joe
-	elif [ $dtype == "slackware" ]; then
-		echo "No install support for Slackware"
-	else
-		echo "Unknown distribution"
-	fi
-}
-
-# Show current network information
-# netinfo() {
-# 	echo "--------------- Network Information ---------------" # removed these lines due to not showing any info on my system 
-# 	/sbin/ifconfig | awk /'inet addr/ {print $2}'
-# 	echo ""
-# 	/sbin/ifconfig | awk /'Bcast/ {print $3}'
-# 	echo ""
-# 	/sbin/ifconfig | awk /'inet addr/ {print $4}'
-
-# 	/sbin/ifconfig | awk /'HWaddr/ {print $4,$5}'
-# 	echo "---------------------------------------------------"
- netinfo() {
-	echo "--------------- Network Information ---------------"
-	ip a | awk '/^[0-9]+:/{gsub(/:/,"",$2); device=$2} /^[[:space:]]*inet /{print "Device: " device "  IP: " $2}' # shows all devices with ip's
-# '
-# 	echo ""
-# 	/sbin/ifconfig | awk /'Bcast/ {print $3}'
-# 	echo ""
-# 	/sbin/ifconfig | awk /'inet addr/ {print $4}'
-# 	/sbin/ifconfig | awk /'HWaddr/ {print $4,$5}'
-	echo "---------------------------------------------------"
+	case $dtype in
+		"redhat")
+			sudo yum install multitail tree zoxide trash-cli fzf bash-completion fastfetch
+			;;
+		"suse")
+			sudo zypper install multitail tree zoxide trash-cli fzf bash-completion fastfetch
+			;;
+		"debian")
+			sudo apt-get install multitail tree zoxide trash-cli fzf bash-completion
+			# Fetch the latest fastfetch release URL for linux-amd64 deb file
+			FASTFETCH_URL=$(curl -s https://api.github.com/repos/fastfetch-cli/fastfetch/releases/latest | grep "browser_download_url.*linux-amd64.deb" | cut -d '"' -f 4)
+			
+			# Download the latest fastfetch deb file
+			curl -sL $FASTFETCH_URL -o /tmp/fastfetch_latest_amd64.deb
+			
+			# Install the downloaded deb file using apt-get
+			sudo apt-get install /tmp/fastfetch_latest_amd64.deb
+			;;
+		"arch")
+			sudo paru multitail tree zoxide trash-cli fzf bash-completion fastfetch
+			;;
+		"slackware")
+			echo "No install support for Slackware"
+			;;
+		*)
+			echo "Unknown distribution"
+			;;
+	esac
 }
 
 # IP address lookup
 alias whatismyip="whatsmyip"
-function whatsmyip() {
-	# Dumps a list of all IP addresses for every device
-	# /sbin/ifconfig |grep -B1 "inet addr" |awk '{ if ( $1 == "inet" ) { print $2 } else if ( $2 == "Link" ) { printf "%s:" ,$1 } }' |awk -F: '{ print $1 ": " $3 }';
-
-	### Old commands
-	 #Internal IP Lookup
-	#echo -n "Internal IP: " ; /sbin/ifconfig eth0 | grep "inet addr" | awk -F: '{print $2}' | awk '{print $1}'
-	#
-	#	# External IP Lookup
-	#echo -n "External IP: " ; wget http://smart-ip.net/myip -O - -q
-
+function whatsmyip ()
+{
 	# Internal IP Lookup.
 	if [ -e /sbin/ip ]; then
 		echo -n "Internal IP: "
@@ -567,14 +462,6 @@ function whatsmyip() {
 		/sbin/ifconfig wlan0 | grep "inet " | awk -F: '{print $1} |' | awk '{print $2}'
 	fi
 
-	# Internal IP Lookup ethernet .
-	if [ -e /sbin/ip ]; then
-		echo -n "Internal IP: "
-		/sbin/ip addr show eth0 | grep "inet " | awk -F: '{print $1}' | awk '{print $2}'
-	else
-		echo -n "Internal IP: "
-		/sbin/ifconfig eth0 | grep "inet " | awk -F: '{print $1} |' | awk '{print $2}'
-	fi
 	# External IP Lookup
 	echo -n "External IP: "
 	curl -s ifconfig.me
@@ -642,14 +529,6 @@ mysqlconfig() {
 	fi
 }
 
-# For some reason, rot13 pops up everywhere
-rot13() {
-	if [ $# -eq 0 ]; then
-		tr '[a-m][n-z][A-M][N-Z]' '[n-z][a-m][N-Z][A-M]'
-	else
-		echo $* | tr '[a-m][n-z][A-M][N-Z]' '[n-z][a-m][N-Z][A-M]'
-	fi
-}
 
 # Trim leading and trailing spaces (for scripts)
 trim() {
@@ -670,499 +549,15 @@ lazyg() {
 	git push
 }
 
-# Aliases git
-alias g='git'
-compdef g=git
-alias gst='git status'
-compdef _git gst=git-status
-alias gcl='git clone --recurse-submodules'
-compdef _git gcl=git-clone
-alias gl='git pull'
-compdef _git gl=git-pull
-alias gup='git fetch && git rebase'
-compdef _git gup=git-fetch
-alias gp='git push'
-compdef _git gp=git-push
-gdv() { git diff -w "$@" | view - }
-compdef _git gdv=git-diff
-alias gc='git commit -v'
-compdef _git gc=git-commit
-alias gca='git commit -v -a'
-compdef _git gca=git-commit
-alias gco='git checkout'
-compdef _git gco=git-checkout
-alias gcm='git checkout master'
-alias gb='git branch'
-compdef _git gb=git-branch
-alias gba='git branch -a'
-compdef _git gba=git-branch
-alias gcount='git shortlog -sn'
-compdef gcount=git
-alias gcp='git cherry-pick'
-compdef _git gcp=git-cherry-pick
-alias glg='git log --stat --max-count=5'
-compdef _git glg=git-log
-alias glgg='git log --graph --max-count=5'
-compdef _git glgg=git-log
-alias gss='git status -s'
-compdef _git gss=git-status
-alias ga='git add'
-compdef _git ga=git-add
-alias gm='git merge'
-compdef _git gm=git-merge
-alias grh='git reset HEAD'
-alias grhh='git reset HEAD --hard'
-compdef _git grhh=git-reset-hard
-alias gsbm='git submodule update --init --remote --force --recursive'
-compdef _git gsbm='git-submodule-update'
-
-
-Will return the current branch name
-Usage example: git pull origin $(current_branch)
-
-}
-function current_branch() {
-  ref=$(git symbolic-ref HEAD 2> /dev/null) || return
-  echo ${ref#refs/heads/}
-}
-
-function current_repository() {
-
-  ref=$(git symbolic-ref HEAD 2> /dev/null) || return
-  echo $(git remote -v | cut -d':' -f 2)
-}
-_z_cd() {
-	cd "$@" || return "$?"
-
-	if [ "$_ZO_ECHO" = "1" ]; then
-		echo "$PWD"
-	fi
-}
-
-z() {
-	if [ "$#" -eq 0 ]; then
-		_z_cd ~
-	elif [ "$#" -eq 1 ] && [ "$1" = '-' ]; then
-		if [ -n "$OLDPWD" ]; then
-			_z_cd "$OLDPWD"
-		else
-			echo 'zoxide: $OLDPWD is not set'
-			return 1
-		fi
-	else
-		_zoxide_result="$(zoxide query -- "$@")" && _z_cd "$_zoxide_result"
-	fi
-}
-
-zi() {
-	_zoxide_result="$(zoxide query -i -- "$@")" && _z_cd "$_zoxide_result"
-}
-
-alias za='zoxide add'
-
-alias zq='zoxide query'
-alias zqi='zoxide query -i'
-
-alias zr='zoxide remove'
-zri() {
-	_zoxide_result="$(zoxide query -i -- "$@")" && zoxide remove "$_zoxide_result"
-}
-
-_zoxide_hook() {
-	if [ -z "${_ZO_PWD}" ]; then
-		_ZO_PWD="${PWD}"
-	elif [ "${_ZO_PWD}" != "${PWD}" ]; then
-		_ZO_PWD="${PWD}"
-		zoxide add "$(pwd -L)"
-	fi
-}
-
-case "$PROMPT_COMMAND" in
-*_zoxide_hook*) ;;
-*) PROMPT_COMMAND="_zoxide_hook${PROMPT_COMMAND:+;${PROMPT_COMMAND}}" ;;
-esac
-alias lookingglass="~/looking-glass-B5.0.1/client/build/looking-glass-client -F"
-##
-# Check if a command or alias exists
-function cmd-exists() {
-	# If no arguments or just '--strict' is provided, show help message
-	if [[ -z "${1}" || (${#} -eq 1 && "${1}" == "--strict") ]]; then
-		echo -e "${BRIGHT_WHITE}cmd-exists:${RESET} Checks if a command or alias exists"
-		echo -e "${BRIGHT_WHITE}Options:${RESET}"
-		echo -e "  ${BRIGHT_YELLOW}--strict${RESET} or ${BRIGHT_YELLOW}-s${RESET} checks for executable commands only ${BRIGHT_RED}excluding aliases${RESET}"
-		echo -e "${BRIGHT_WHITE}Usage examples:${RESET}"
-		echo -e "  Check any command or alias:"
-		echo -e "    ${BRIGHT_GREEN}cmd-exists ${BRIGHT_YELLOW}ls${RESET}"
-		echo -e "  Check executable only ${BRIGHT_RED}(strict mode)${RESET}:"
-		echo -e "    ${BRIGHT_GREEN}cmd-exists ${BRIGHT_YELLOW}--strict ${BRIGHT_YELLOW}grep${RESET}"
-		echo -e "  Display this help message:"
-		echo -e "    ${BRIGHT_GREEN}cmd-exists${RESET}"
-		return 2  # Return code 2 to indicate incorrect usage
-	fi
-#
-
-#######################################################
-### FIND FILES OR FILE INFORMATION
-#######################################################
-
-# Searches for directories (can use wildcards)
-# Example: finddir config
-# Example: finddir "This has spaces"
-alias finddir='find . -type d -iname'
-
-# Recursively find all files modified in the last 24 hours (current directory)
-alias find24='find . -mtime -1 -ls'
-
-# Find all the symlinks containing search text (i.e. "/backup")
-alias findlinks="find . -type l -printf '%p -> ' -exec readlink -f {} ';' | grep -E"
-
-# To count how many files are in your current file system location:
-alias countfiles='find . -type f | wc -l'
-
-# To see if a command is aliased, a file, or a built-in command
-alias check="type -t"
-
-# If the mlocate package is installed
-if cmd-exists locate; then
-	# Case insensitive search and display only files present in your system
-	alias locate='locate -i -e'
-
-	# Update the locate database before locating a file
-	# --require-visibility 0 ensures only accessible files are indexed
-	alias ulocate='sudo updatedb --require-visibility 0 && locate'
-
-	# Always update the locate (mlocate) database as root
-	alias updatedb='sudo updatedb --require-visibility 0'
-
-	# Display the number of matching entries
-	alias locount='locate -c'
-fi
-
-#######################################################
-# Display disk space available and show file system type
-alias df='df --human-readable --print-type --exclude-type=squashfs'
-alias ds='df --human-readable --print-type --exclude-type=squashfs --exclude-type=tmpfs --exclude-type=devtmpfs'
-#####
-
-
-# Show open ports
-alias ports='netstat -tulanp'
-##
-if cmd-exists --strict nala; then # Debian/Ubuntu/Raspbian
-	# Link: https://gitlab.com/volian/nala
-	# Link: https://itsfoss.com/nala/
-	alias has='nala show'
-	alias pkgupdateall='sudo nala update && sudo nala upgrade && if type pacstall >/dev/null 2>&1; then pacstall --upgrade; fi'
-	alias pkgupdate='sudo nala update'
-	alias pkginstall='sudo nala install --install-suggests'
-	alias pkgremove='sudo nala remove'
-	alias pkgclean='sudo nala clean --fix-broken'
-	alias pkgsearch='sudo nala search'
-	alias pkglist='sudo nala list --installed'
-	alias pkgmirrors='sudo nala fetch'
-elif cmd-exists --strict apt; then # Debian/Ubuntu/Raspbian
-	# Link: https://itsfoss.com/apt-command-guide/
-	alias has='apt show'
-	alias pkgupdateall='sudo apt update --assume-yes && sudo apt upgrade --assume-yes && if type pacstall >/dev/null 2>&1; then pacstall --upgrade; fi && if type tldr >/dev/null 2>&1; then tldr --update; fi'
-	alias pkgupdate='sudo apt-get install --only-upgrade'
-	alias pkginstall='sudo apt install'
-	alias pkgremove='sudo apt remove'
-	alias pkgclean='sudo apt autoremove'
-	alias pkgsearch='sudo apt search'
-	alias pkglist='sudo apt list --installed'
-	alias pkgcheck='sudo apt update --assume-yes && apt list --upgradable'
-elif cmd-exists --strict apt-get; then # Debian/Ubuntu
-	# Link: https://help.ubuntu.com/community/AptGet/Howto
-	alias has='apt-cache show'
-	alias pkgupdateall='sudo apt-get update && sudo apt-get upgrade && if type pacstall >/dev/null 2>&1; then pacstall --upgrade; fi && if type tldr >/dev/null 2>&1; then tldr --update; fi'
-	alias pkgupdate='sudo apt-get install --only-upgrade'
-	alias pkginstall='sudo apt-get install'
-	alias pkgremove='sudo apt-get remove'
-	alias pkgclean='sudo apt-get autoremove'
-	alias pkgsearch='sudo apt-cache search'
-	alias pkglist='sudo dpkg -l'
-fi
-##
-
-# Finds the current Linux distribution, name, version, and kernel version
-function ver() {
-	if cmd-exists --strict uname; then
-		# Get information about the system kernel, release, and machine hardware
-		uname --kernel-name --kernel-release --machine
-		echo
-	fi
-	if [[ -e /proc/version ]]; then
-		# File that contains version information about the operating kernel
-		cat /proc/version
-		echo
-	fi
-	if cmd-exists --strict lsb_release; then
-		# Provides LSB (Linux Standard Base) and distribution-specific information
-		lsb_release -a
-		echo
-	fi
-	if cmd-exists --strict hostnamectl; then
-		# Control the Linux system hostname, also shows various system details
-		hostnamectl
-		echo
-	else
-		# Various files that contain text relating to the system identification
-		cat /etc/*-release 2> /dev/null
-	fi
-}
-
-##
-
-# Send file(s) to the trash
-# Link: https://www.tecmint.com/trash-cli-manage-linux-trash-from-command-line/
-function trash() {
-	# Check for the presence of arguments
-	if [[ $# -eq 0 ]]; then
-		echo -e "${BRIGHT_WHITE}trash:${RESET} Send files to the trash"
-		echo -e "${BRIGHT_WHITE}Usage:${BRIGHT_CYAN} trash${RESET} ${BRIGHT_YELLOW}<filename1> [filename2] ...${RESET}"
-		return 1
-	fi
-
-	# Check if trash-cli exists...
-	# https://github.com/andreafrancia/trash-cli
-	if cmd-exists --strict trash-put; then
-		trash-put "${@}"
-	# Check if rem exists...
-	# Link: https://github.com/quackduck/rem
-	elif cmd-exists --strict rem; then
-		rem "${@}"
-	# Check if gio trash exists (glib2)...
-	# Link: https://wiki.archlinux.org/title/Trash-cli#gio_trash
-	elif cmd-exists --strict gio; then
-		gio trash "${@}"
-	# Check if kioclient5 exists (kde-cli-tools)...
-	# Link: https://wiki.archlinux.org/title/Trash-cli#kioclient5
-	elif cmd-exists --strict kioclient5; then
-		kioclient5 move "${@}" trash:/
-	elif [[ -d $HOME/.local/share/Trash/files ]]; then
-		mv "${@}" $HOME/.local/share/Trash/files/
-	elif [[ -d $HOME/.local/share/trash/files ]]; then
-		mv "${@}" $HOME/.local/share/trash/files/
-	elif [[ -d $HOME/.Trash ]]; then
-		mv "${@}" $HOME/.Trash/
-	elif [[ -d $HOME/.trash ]]; then
-		mv "${@}" $HOME/.trash/
-	else
-		mkdir $HOME/.trash
-		mv "${@}" $HOME/.trash/
-	fi
-}
-
-# Display the contents of the trash
-function trashlist() {
-	# Check if trash-cli exists...
-	# https://github.com/andreafrancia/trash-cli
-	if cmd-exists --strict trash-list; then
-		trash-list
-	# Check if rem exists...
-	# Link: https://github.com/quackduck/rem
-	elif cmd-exists --strict rem; then
-		rem -l
-	# Check if gio trash exists (glib2)...
-	# Link: https://wiki.archlinux.org/title/Trash-cli#gio_trash
-	elif cmd-exists --strict gio; then
-		gio list trash:///
-	# Check if kioclient5 exists (kde-cli-tools)...
-	# Link: https://wiki.archlinux.org/title/Trash-cli#kioclient5
-	elif cmd-exists --strict kioclient5; then
-		kioclient5 ls trash:/
-	# Check for alternative trash directories and list files
-	elif [[ -d ${HOME}/.local/share/Trash/files ]]; then
-		ls -l ${HOME}/.local/share/Trash/files/
-	elif [[ -d ${HOME}/.local/share/trash/files ]]; then
-		ls -l ${HOME}/.local/share/trash/files/
-	elif [[ -d ${HOME}/.Trash ]]; then
-		ls -l ${HOME}/.Trash/
-	elif [[ -d ${HOME}/.trash ]]; then
-		ls -l ${HOME}/.trash/
-	else
-		echo -e "${BRIGHT_RED}Error: ${BRIGHT_CYAN}No trash directory found${RESET}"
-	fi
-}
-
-# Empty and permanently delete all the files in the trash
-function trashempty() {
-	# Ask for user confirmation before deleting trash
-	if ask "${BRIGHT_WHITE}Are you sure you want to ${BRIGHT_MAGENTA}permanently delete${BRIGHT_WHITE} all the files in the trash? ${BRIGHT_RED}This action cannot be undone.${RESET}" "N"; then
-		# Check if trash-cli exists...
-		# https://github.com/andreafrancia/trash-cli
-		if cmd-exists --strict trash-empty; then
-			trash-empty
-		# Check if rem exists...
-		# Link: https://github.com/quackduck/rem
-		elif cmd-exists --strict rem; then
-			rem --empty
-		# Check if gio trash exists (glib2)...
-		# Link: https://wiki.archlinux.org/title/Trash-cli#gio_trash
-		elif cmd-exists --strict gio; then
-			gio trash --empty
-		# Check if kioclient5 exists (kde-cli-tools)...
-		# Link: https://wiki.archlinux.org/title/Trash-cli#kioclient5
-		elif cmd-exists --strict kioclient5; then
-			kioclient5 empty trash:/
-		# Check for alternative trash directories and delete files
-		elif [[ -d ${HOME}/.local/share/Trash/files ]]; then
-			rm -rf ${HOME}/.local/share/Trash/files/{..?*,.[!.]*,*} 2>/dev/null
-		elif [[ -d ${HOME}/.local/share/trash/files ]]; then
-			rm -rf ${HOME}/.local/share/trash/files/{..?*,.[!.]*,*} 2>/dev/null
-		elif [[ -d ${HOME}/.Trash ]]; then
-			rm -rf ${HOME}/.Trash/{..?*,.[!.]*,*} 2>/dev/null
-		elif [[ -d ${HOME}/.trash ]]; then
-			rm -rf ${HOME}/.trash/{..?*,.[!.]*,*} 2>/dev/null
-		else
-			# No supported method found for emptying trash
-			echo -e "${BRIGHT_RED}Error: ${BRIGHT_CYAN}No trash directory or supported application found${RESET}"
-		fi
-	else
-		# Operation was cancelled by the user
-		echo -e "${BRIGHT_RED}Operation cancelled.${RESET}"
-	fi
-}
-
-# Restore the trash only is trash-cli is installed
-# trash-cli - Command Line Interface to FreeDesktop.org Trash
-# Link: https://github.com/andreafrancia/trash-cli
-if cmd-exists --strict restore-trash; then
-	alias trashrestore='restore-trash'
-elif cmd-exists --strict trash-restore; then
-	alias trashrestore='trash-restore'
-fi
-
-###
-
-# Interactively create, configure, and test a new Linux user
-function createuser() {
-	sudo true
-	local username
-
-	# Check if a username was passed as a parameter
-	if [ "$#" -eq 1 ]; then
-		username="$1"
-	else
-		read -r -p $'${BRIGHT_CYAN}Enter the username for the new user:${RESET} ' username
-	fi
-
-	# Check if the user already exists
-	if id "${username}" &>/dev/null; then
-		echo -e "${BRIGHT_RED}User ${username} already exists. Aborting.${RESET}"
-		return 1
-	fi
-
-	# Confirm if the user should be created with a home directory
-	if ask "${BRIGHT_GREEN}Create a new user with a home folder?${RESET}" N; then
-		sudo useradd -m "${username}"
-	else
-		echo -e "${BRIGHT_RED}User creation aborted.${RESET}"
-		return 1
-	fi
-
-	# Set the user's password
-	echo -e "${BRIGHT_YELLOW}\nSet the user's password:${RESET}"
-	sudo passwd "${username}"
-
-	# Ask if the user should change their password upon next login
-	if ask "${BRIGHT_GREEN}Force user to change password on next login?${RESET}" N; then
-		sudo passwd -e "${username}"
-	else
-		echo -e "${BRIGHT_YELLOW}No change password enforced.${RESET}"
-	fi
-
-	# Ask if the user should have root (sudo) access
-	if ask "${BRIGHT_MAGENTA}⚠️ Give user root access? ⚠️${RESET}" N; then
-		sudo usermod -a -G sudo "${username}"
-	else
-		echo -e "${BRIGHT_YELLOW}No root access granted.${RESET}"
-	fi
-
-	# Change the user's login shell to bash
-	echo -e "${BRIGHT_CYAN}\nChange user’s login shell to bash${RESET}"
-	sudo usermod --shell /bin/bash "${username}"
-
-	# Verify the user's settings
-	echo -e "${BRIGHT_YELLOW}\nVerifying user settings:${RESET}"
-	sudo grep "${username}" /etc/passwd
-
-	# Ask if you should copy over the local .bashrc to the new user
-	if ask "${BRIGHT_GREEN}Copy over your local .bashrc?${RESET}" N; then
-		sudo cp ~/.bashrc /home/"${username}"/
-		sudo chown "${username}":"${username}" /home/"${username}"/.bashrc
-		sudo chmod 644 /home/"${username}"/.bashrc
-	else
-		echo -e "${BRIGHT_YELLOW}No .bashrc copy.${RESET}"
-	fi
-
-	# Test login with the new user
-	if ask "${BRIGHT_GREEN}⚠️ Test a login as this user? ⚠️${RESET}" N; then
-		echo -e "${BRIGHT_CYAN}\nTesting: Logging in as ${username}${RESET}"
-		sudo su - "${username}"
-	fi
-}
-
-# Remove a user from the system
-alias deleteuser='sudo userdel'
-function wipeuser() {
-	local username="$1"
-
-	# If username is not provided, get the list of users and use createmenu
-	if [[ -z "${username}" ]]; then
-		echo -e "${BRIGHT_CYAN}Select a user to delete:${RESET}"
-		username=$(sudo awk -F: '$3 >= 1000 && $3 < 65534 {print $1}' /etc/passwd | createmenu)
-	fi
-
-	# If username is still empty (e.g. if the user cancels the menu selection), exit
-	if [[ -z "${username}" ]]; then
-		echo -e "${BRIGHT_RED}No user selected. Aborting.${RESET}"
-		return 1
-
-	# Check against this being the current user
-	elif [[ "${username}" == "${USER}" ]]; then
-		echo -e "${BRIGHT_RED}You cannot remove the currently logged-in user. Aborting.${RESET}"
-		return 1
-	fi
-
-	# Check if the user exists
-	if id "${username}" &>/dev/null; then
-
-		# Confirm deletion
-		if ask "${BRIGHT_RED}⚠️ Are you sure you want to delete user ${username} and all their data? ⚠️ This action cannot be undone! ⚠️${RESET}" N; then
-
-			# Kill all processes by the user
-			sudo pkill -U "${username}"
-
-			# Remove the user and their home directory
-			sudo userdel -rf "${username}"
-
-			# Remove the user from any additional groups
-			sudo delgroup "${username}" &>/dev/null
-
-			echo -e "${BRIGHT_GREEN}User ${username} and their home directory have been deleted.${RESET}"
-		else
-			echo -e "${BRIGHT_YELLOW}User deletion aborted.${RESET}"
-		fi
-	else
-		echo -e "${BRIGHT_RED}User ${username} does not exist.${RESET}"
-	fi
-}
-
-
-###
-#
 #######################################################
 # Set the ultimate amazing command prompt
 #######################################################
 
-alias hug="hugo server -F --bind=10.0.0.210 --baseURL=http://10.0.0.210"
+alias hug="hugo server -F --bind=10.0.0.97 --baseURL=http://10.0.0.97"
+bind '"\C-f":"zi\n"'
 
-export PATH=$PATH:"$HOME/.local/bin:$HOME/.cargo/bin:/var/lib/flatpak/exports/bin:/.local/share/flatpak/exports/bin:/usr/bin"
+export PATH=$PATH:"$HOME/.local/bin:$HOME/.cargo/bin:/var/lib/flatpak/exports/bin:/.local/share/flatpak/exports/bin"
 
 # Install Starship - curl -sS https://starship.rs/install.sh | sh
-
 eval "$(starship init bash)"
-
-# Install zoxide 
 eval "$(zoxide init bash)"
