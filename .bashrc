@@ -467,16 +467,32 @@ function whatsmyip ()
 	# Internal IP Lookup.
 	if [ -e /sbin/ip ]; then
 		echo -n "Internal IP: "
-		/sbin/ip addr show wlan0 | grep "inet " | awk -F: '{print $1}' | awk '{print $2}'
+		/sbin/ip addr show eth0 | grep "inet " | awk -F: '{print $1}' | awk '{print $2}'
 	else
 		echo -n "Internal IP: "
-		/sbin/ifconfig wlan0 | grep "inet " | awk -F: '{print $1} |' | awk '{print $2}'
+		/sbin/ifconfig eth00 | grep "inet " | awk -F: '{print $1} |' | awk '{print $2}'
 	fi
 
 	# External IP Lookup
 	echo -n "External IP: "
 	curl -s ifconfig.me
 }
+netinfo() {
+	echo "--------------- Network Information ---------------"
+	/sbin/ifconfig | awk /'inet addr/ {print $2}'
+	echo ""
+	/sbin/ifconfig | awk /'Bcast/ {print $3}'
+	echo ""
+	/sbin/ifconfig | awk /'inet addr/ {print $4}'
+	/sbin/ifconfig | awk /'HWaddr/ {print $4,$5}'
+	ip a | awk '/^[0-9]+:/{gsub(/:/,"",$2); device=$2} /^[[:space:]]*inet /{print "Device: " device "  IP: " $2}' # shows all devices with ip's
+# '
+# 	echo ""
+# 	/sbin/ifconfig | awk /'Bcast/ {print $3}'
+# 	echo ""
+# 	/sbin/ifconfig | awk /'inet addr/ {print $4}'
+# 	/sbin/ifconfig | awk /'HWaddr/ {print $4,$5}'
+	echo "---------------------------------------------------"
 
 # View Apache logs
 apachelog() {
