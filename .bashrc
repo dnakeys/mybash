@@ -1,6 +1,30 @@
 #!/bin/bash
 iatest=$(expr index "$-" i)
 
+########### automaticaly get bash update from github ###########
+function reloadbashrc() {
+REPO_URL="https://github.com/dnakeys/mybash.git"
+BRANCH="main"  # Change this to your branch name
+#
+# Path to .bashrc file
+BASHRC_FILE="$HOME/.bashrc"
+
+# temp save bash file
+TEMP_FILE=$(mktemp)
+
+# grab updated bash 
+curl -sSL "https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc" -o "$TEMP_FILE"
+
+# repalce bash with new
+if [ -s "$TEMP_FILE" ]; then
+    mv -f "$TEMP_FILE" "$BASHRC_FILE" # no confirm before saving
+   # mv  "$TEMP_FILE" "$BASHRC_FILE" # will ask for confrm before saving
+    echo "Updated .bashrc successfully."
+else
+    echo "Failed to update .bashrc."
+fi
+}
+####### end of update #########
 #######################################################
 # SOURCED ALIAS'S AND SCRIPTS BY zachbrowne.me
 #######################################################
@@ -114,6 +138,7 @@ alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo
 
 # Edit this .bashrc file
 alias ebrc='edit ~/.bashrc'
+alias rbrc='reloadbashrc'
 
 # Show help for this .bashrc file
 alias hlp='less ~/.bashrc_help'
