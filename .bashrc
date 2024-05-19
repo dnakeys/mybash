@@ -122,7 +122,7 @@ alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo
 
 # Edit this .bashrc file
 alias ebrc='edit ~/.bashrc'
-alias rbrc='. ~/bashrc'
+alias rbrc='. ~/.bashrc'
 alias gtbrc='sudo curl -sSL https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc --output $HOME/.bashrc | . ~/.bashrc'
 
 # Show help for this .bashrc file
