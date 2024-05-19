@@ -3,27 +3,27 @@ iatest=$(expr index "$-" i)
 
 ###########  Get bash update from github ###########
 function getbash {
-REPO_URL="https://github.com/dnakeys/mybash.git"
-BRANCH="main"  # Change this to your branch name
+#REPO_URL="https://github.com/dnakeys/mybash.git"
+#BRANCH="main"  # Change this to your branch name
 #
 # Path to .bashrc file
-BASHRC_FILE="$HOME/.bashrc"
+#BASHRC_FILE="$HOME/.bashrc"
 
 # temp save bash file
-TEMP_FILE=$(mktemp)
+#TEMP_FILE=$(mktemp)
 
 # grab updated bash 
-curl -sSL "https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc" -o "$TEMP_FILE"
-
+#curl -sSL "https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc" -o "$TEMP_FILE"
+curl -sSL https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc --output $HOME/.bashrc | rbrc
 # repalce bash with new
-if [ -s "$TEMP_FILE" ]; then
-    mv -f "$TEMP_FILE" "$BASHRC_FILE" # no confirm before saving
+#if [ -s "$TEMP_FILE" ]; then
+#    mv -f "$TEMP_FILE" "$BASHRC_FILE" # no confirm before saving
    # mv  "$TEMP_FILE" "$BASHRC_FILE" # will ask for confrm before saving
-    echo "Updated .bashrc successfully."
-	else
-    echo "Failed to update .bashrc."
+#    echo "Updated .bashrc successfully."
+	#else
+    #echo "Failed to update .bashrc."
 	
-fi
+#fi
 }
 ####### end of update #########
 #######################################################
