@@ -60,7 +60,10 @@ function cmd-exists() {
 		echo -e "    ${BRIGHT_GREEN}cmd-exists${RESET}"
 		return 2  # Return code 2 to indicate incorrect usage
 	fi
-fi
+fi	
+
+
+
 #######################################################
 # EXPORTS
 #######################################################
@@ -93,19 +96,19 @@ if [[ $iatest -gt 0 ]]; then bind "set completion-ignore-case on"; fi
 if [[ $iatest -gt 0 ]]; then bind "set show-all-if-ambiguous On"; fi
 
 # Set the default editor
-export EDITOR=nvim
-export VISUAL=nvim
+export EDITOR=nano
+export VISUAL=nano
 alias pico='edit'
 alias spico='sedit'
 alias nano='edit'
 alias snano='sedit'
 alias vim='nvim'
-
 # Set some defaults for nano
 # NOTE: Depending on the version of nano you have, --linenumbers and --suspend is helpful
 if cmd-exists --strict nano; then
 	alias {n,nano}='nano --smarthome --multibuffer --const --autoindent'
 fi
+
 # Replace batcat with cat on Fedora as batcat is not available as a RPM in any form
 if command -v lsb_release >/dev/null; then
 	DISTRIBUTION=$(lsb_release -si)
@@ -274,7 +277,7 @@ alias clickpaste='sleep 3; xdotool type "$(xclip -o -selection clipboard)"'
 
 alias kssh="kitty +kitten ssh"
 
-######################################################
+#######################################################
 ### SYSTEMD ALIASES
 #######################################################
 
@@ -318,6 +321,7 @@ if cmd-exists --strict systemctl; then
 		alias sshstop='sudo systemctl stop sshd.service && sudo systemctl disable sshd.service'
 		alias sshrestart='sudo systemctl restart sshd.service && sudo systemctl enable sshd.service'
 	fi
+
 #######################################################
 # SPECIAL FUNCTIONS
 #######################################################
@@ -344,80 +348,9 @@ extract() {
 		fi
 	done
 }
-#######################################################
-# Easy Cross-Platform Package Management Aliases
-#######################################################
-
 # Depending on the installed package managers, set up some package aliases
-if cmd-exists --strict paru; then # Arch
-	# Link: https://github.com/Morganamilo/paru
-	# Link: https://itsfoss.com/paru-aur-helper/
-	# NOTE: To get search results to start at the bottom and go upwards, enable BottomUp in paru.conf
-	alias has='paru -Si'
-	alias pkgupdateall='paru -Syyu --sudoloop --noconfirm --newsonupgrade && if type flatpak >/dev/null 2>&1; then sudo flatpak update --assumeyes --noninteractive; fi && if type snap >/dev/null 2>&1; then sudo snap refresh; fi && if type tldr >/dev/null 2>&1; then tldr --update; fi'
-	alias pkgupdate='paru --sync --sudoloop --noconfirm'
-	alias pkginstall='paru --sync --sudoloop --noconfirm'
-	alias pkgremove='paru --remove'
-	alias pkgclean='paru --clean'
-	alias pkgsearch='paru --bottomup'
-	alias pkglist='paru -Qe'
-	alias pkglistmore='paru -Q' # Also includes dependencies
-elif cmd-exists --strict yay; then # Arch
-	# Link: https://github.com/Jguer/yay
-	alias has='yay -Si'
-	alias pkgupdateall='yay -Syyu --sudoloop && if type flatpak >/dev/null 2>&1; then sudo flatpak update; fi && if type snap >/dev/null 2>&1; then sudo snap refresh; fi && if type tldr >/dev/null 2>&1; then tldr --update; fi'
-	alias pkgupdate='yay -S'
-	alias pkginstall='yay -S'
-	alias pkgremove='yay -Rns'
-	alias pkgclean='yay -Yc'
-	alias pkgsearch='yay'
-	alias pkglist='yay -Qe'
-	alias pkglistmore='yay -Q' # Also includes dependencies
-elif cmd-exists --strict pamac; then    # Manjaro
-	# Link: https://wiki.manjaro.org/index.php/Pamac
-	alias has='sudo pamac info'
-	alias pkgupdateall='sudo pamac upgrade -a && if type tldr >/dev/null 2>&1; then tldr --update; fi'
-	alias pkgupdate='sudo pamac update'
-	alias pkginstall='sudo pamac install'
-	alias pkgremove='sudo pamac remove'
-	alias pkgclean='sudo pamac remove --orphans'
-	alias pkgsearch='sudo pamac search -a'
-	alias pkglist='pacman -Qe'
-	alias pkglistmore='pacman -Q' # Also includes dependencies
-elif cmd-exists --strict pacman && [[ -n $(uname -r | grep arch) ]]; then # Arch (No AUR)
-	# Link: https://archlinux.org/pacman/
-	alias has='pacman -Q --info'
-	alias pkgupdateall='sudo pacman -Syyu && if type flatpak >/dev/null 2>&1; then sudo flatpak update; fi && if type snap >/dev/null 2>&1; then sudo snap refresh; fi && if type tldr >/dev/null 2>&1; then tldr --update; fi'
-	alias pkgupdate='sudo pacman -S'
-	alias pkginstall='sudo pacman -S'
-	alias pkgremove='sudo pacman -Rns'
-	alias pkgclean='pacman -Qtdq | sudo pacman -Rns -'
-	alias pkgsearch='pacman -Ss'
-	alias pkglist='pacman -Qe'
-	alias pkglistmore='pacman -Q' # Also includes dependencies
-elif cmd-exists --strict dnf; then # RedHat/Fedora
-	# Link: https://fedoraproject.org/wiki/DNF
-	alias has='dnf info'
-	alias pkgupdateall='sudo dnf upgrade --refresh'
-	alias pkgupdate='sudo dnf upgrade'
-	alias pkginstall='sudo dnf install'
-	alias pkgremove='sudo dnf remove'
-	alias pkgclean='sudo dnf autoremove'
-	alias pkgsearch='sudo dnf search'
-	alias pkglist='dnf list installed'
-	alias pkgdependencies='yum whatprovides'
-elif cmd-exists --strict yum; then # RedHat/Fedora
-	# Link: https://access.redhat.com/articles/yum-cheat-sheet
-	alias has='yum info'
-	alias pkgupdateall='sudo yum clean all && yum -y update'
-	alias pkgupdate='sudo yum update'
-	alias pkginstall='sudo yum install'
-	alias pkgremove='sudo yum remove'
-	alias pkgclean='sudo yum autoremove'
-	alias pkgsearch='sudo yum search'
-	alias pkglist='yum list installed'
-	alias pkgdependencies='yum whatprovides'
-elif cmd-exists --strict nala; then # Debian/Ubuntu/Raspbian
+
+if cmd-exists --strict nala; then # Debian/Ubuntu/Raspbian
 	# Link: https://gitlab.com/volian/nala
 	# Link: https://itsfoss.com/nala/
 	alias has='nala show'
@@ -440,80 +373,6 @@ elif cmd-exists --strict apt; then # Debian/Ubuntu/Raspbian
 	alias pkgsearch='sudo apt search'
 	alias pkglist='sudo apt list --installed'
 	alias pkgcheck='sudo apt update --assume-yes && apt list --upgradable'
-elif cmd-exists --strict apt-get; then # Debian/Ubuntu
-	# Link: https://help.ubuntu.com/community/AptGet/Howto
-	alias has='apt-cache show'
-	alias pkgupdateall='sudo apt-get update && sudo apt-get upgrade && if type pacstall >/dev/null 2>&1; then pacstall --upgrade; fi && if type tldr >/dev/null 2>&1; then tldr --update; fi'
-	alias pkgupdate='sudo apt-get install --only-upgrade'
-	alias pkginstall='sudo apt-get install'
-	alias pkgremove='sudo apt-get remove'
-	alias pkgclean='sudo apt-get autoremove'
-	alias pkgsearch='sudo apt-cache search'
-	alias pkglist='sudo dpkg -l'
-elif cmd-exists --strict zypper; then # SUSE
-	# Link: https://en.opensuse.org/SDB:Zypper_usage
-	alias has='zypper info'
-	alias pkgupdateall='sudo zypper patch'
-	alias pkgupdate='sudo zypper up'
-	alias pkginstall='sudo zypper in'
-	alias pkgremove='sudo zypper rm'
-	alias pkgclean='sudo zypper packages --orphaned'
-	alias pkgsearch='sudo zypper se'
-	alias pkglist='zypper se --installed-only'
-elif cmd-exists --strict eopkg; then # Solus
-	# Link: https://getsol.us/articles/package-management/basics/en/
-	alias has='sudo eopkg info'
-	alias pkgupdateall='sudo eopkg upgrade'
-	alias pkgupdate='sudo eopkg upgrade'
-	alias pkginstall='sudo eopkg install'
-	alias pkgremove='sudo eopkg remove'
-	alias pkgsearch='sudo eopkg search'
-	alias pkglist='eopkg li -l'
-elif cmd-exists --strict emerge; then # Gentoo (Portage)
-	# Link: https://www.linode.com/docs/guides/portage-package-manager/
-	alias has='equery files'
-	alias pkgupdateall='sudo emerge --sync && sudo emerge --update --deep --with-bdeps=y --newuse @world && sudo emerge --depclean && sudo revdep-rebuild'
-	alias pkgupdate='sudo emerge -u'
-	alias pkginstall='sudo emerge'
-	alias pkgremove='sudo emerge --depclean'
-	alias pkgsearch='sudo emerge --search'
-	alias pkglist='equery list "*"'
-elif cmd-exists --strict slackpkg; then # Slackware
-	# Link: https://www.linux.com/training-tutorials/intro-slackware-package-management/
-	alias has='slackpkg info'
-	alias pkgupdateall='slackpkg update && slackpkg install-new && slackpkg upgrade-all'
-	alias pkgupdate='upgradepkg'
-	alias pkginstall='installpkg'
-	alias pkgremove='removepkg'
-	alias pkglist='pkgtool'
-elif cmd-exists --strict urpmi; then # Mandrake
-	# Link: https://wiki.mageia.org/en/URPMI
-	alias has='urpmq --summary -Y'
-	alias pkgupdateall='urpmi --auto-update'
-	alias pkgupdate='urpmi'
-	alias pkginstall='urpmi'
-	alias pkgremove='urpme'
-	alias pkgsearch='urpmq --summary -Y'
-	alias pkglist='rpm -qa'
-elif cmd-exists --strict apt-cyg; then # Cygwin
-	# Link: http://stephenjungels.com/jungels.net/projects/apt-cyg/
-	alias has='apt-cyg show'
-	alias pkgupdateall='apt-cyg update'
-	alias pkgupdate='apt-cyg update'
-	alias pkginstall='apt-cyg install'
-	alias pkgremove='apt-cyg remove'
-	alias pkgsearch='apt-cyg find'
-	alias pkglist='cygcheck --check-setup'
-elif cmd-exists --strict brew; then # macOS
-	# Link: https://brew.sh/
-	alias has='brew info'
-	alias pkgupdateall='brew update'
-	alias pkgupdate='brew update'
-	alias pkginstall='brew install'
-	alias pkgremove='brew uninstall'
-	alias pkgclean='brew cleanup'
-	alias pkgsearch='brew search'
-	alias pkglist='brew list'
 fi
 
 # Searches for text in all files in the current folder
@@ -729,6 +588,19 @@ function whatsmyip ()
 	echo -n "External IP: "
 	curl -s ifconfig.me
 }
+	# Flushing and restart the DNS cache if installed and running
+	function flushdns() {
+		# Check if systemd-resolved is available
+		if cmd-exists --strict systemd-resolve; then
+			# Check if systemd-resolved service is active
+			if systemctl is-active systemd-resolved >/dev/null; then
+				# Flush DNS cache and restart systemd-resolved
+				sudo systemd-resolve --flush-caches
+				sudo systemctl restart systemd-resolved
+				echo "DNS cache flushed and systemd-resolved restarted"
+			else
+				echo "systemd-resolved is not active, unable to flush DNS cache"
+			fi
 netinfo() {
 	echo "--------------- Network Information ---------------"
 	/sbin/ifconfig | awk /'inet addr/ {print $2}'
@@ -1064,6 +936,7 @@ function wipeuser() {
 	fi
 }
 
+
 #######################################################
 # Set the ultimate amazing command prompt
 #######################################################
@@ -1076,3 +949,4 @@ export PATH=$PATH:"$HOME/.local/bin:$HOME/.cargo/bin:/var/lib/flatpak/exports/bi
 # Install Starship - curl -sS https://starship.rs/install.sh | sh
 eval "$(starship init bash)"
 eval "$(zoxide init bash)"
+f
