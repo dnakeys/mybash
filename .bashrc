@@ -489,11 +489,11 @@ function sparkbars() {
 	echo
 }
 netinfo() {
-	echo "--------------- Network Information ---------------"
     sparkbars
+	echo "--------------- Network Information ---------------"
 	ip a | awk '/^[0-9]+:/{gsub(/:/,"",$2); device=$2} /^[[:space:]]*inet /{print "Device: " device "  IP: " $2}' # shows all devices with ip's
-	saprkbars
 	echo "---------------------------------------------------"
+	sparkbars
 }
 # View Apache logs
 apachelog() {
@@ -575,6 +575,192 @@ lazyg() {
 	git add .
 	git commit -m "$1"
 	git push
+}
+# Send file(s) to the trash
+# Link: https://www.tecmint.com/trash-cli-manage-linux-trash-from-command-line/
+function trash() {
+	# Check for the presence of arguments
+	if [[ $# -eq 0 ]]; then
+		echo -e "${BRIGHT_WHITE}trash:${RESET} Send files to the trash"
+		echo -e "${BRIGHT_WHITE}Usage:${BRIGHT_CYAN} trash${RESET} ${BRIGHT_YELLOW}<filename1> [filename2] ...${RESET}"
+		return 1
+	fi
+
+	# Check if trash-cli exists...
+	# https://github.com/andreafrancia/trash-cli
+	if cmd-exists --strict trash-put; then
+		trash-put "${@}"
+	# Check if rem exists...
+	# Link: https://github.com/quackduck/rem
+	elif cmd-exists --strict rem; then
+		rem "${@}"
+	# Check if gio trash exists (glib2)...
+	# Link: https://wiki.archlinux.org/title/Trash-cli#gio_trash
+	elif cmd-exists --strict gio; then
+		gio trash "${@}"
+	# Check if kioclient5 exists (kde-cli-tools)...
+	# Link: https://wiki.archlinux.org/title/Trash-cli#kioclient5
+	elif cmd-exists --strict kioclient5; then
+		kioclient5 move "${@}" trash:/
+	elif [[ -d $HOME/.local/share/Trash/files ]]; then
+		mv "${@}" $HOME/.local/share/Trash/files/
+	elif [[ -d $HOME/.local/share/trash/files ]]; then
+		mv "${@}" $HOME/.local/share/trash/files/
+	elif [[ -d $HOME/.Trash ]]; then
+		mv "${@}" $HOME/.Trash/
+	elif [[ -d $HOME/.trash ]]; then
+		mv "${@}" $HOME/.trash/
+	else
+		mkdir $HOME/.trash
+		mv "${@}" $HOME/.trash/
+	fi
+}
+
+# Display the contents of the trash
+function trashlist() {
+	# Check if trash-cli exists...
+	# https://github.com/andreafrancia/trash-cli
+	if cmd-exists --strict trash-list; then
+		trash-list
+	# Check if rem exists...
+	# Link: https://github.com/quackduck/rem
+	elif cmd-exists --strict rem; then
+		rem -l
+	# Check if gio trash exists (glib2)...
+	# Link: https://wiki.archlinux.org/title/Trash-cli#gio_trash
+	elif cmd-exists --strict gio; then
+		gio list trash:///
+	# Check if kioclient5 exists (kde-cli-tools)...
+	# Link: https://wiki.archlinux.org/title/Trash-cli#kioclient5
+	elif cmd-exists --strict kioclient5; then
+		kioclient5 ls trash:/
+	# Check for alternative trash directories and list files
+	elif [[ -d ${HOME}/.local/share/Trash/files ]]; then
+		ls -l ${HOME}/.local/share/Trash/files/
+	elif [[ -d ${HOME}/.local/share/trash/files ]]; then
+		ls -l ${HOME}/.local/share/trash/files/
+	elif [[ -d ${HOME}/.Trash ]]; then
+		ls -l ${HOME}/.Trash/
+	elif [[ -d ${HOME}/.trash ]]; then
+		ls -l ${HOME}/.trash/
+	else
+		echo -e "${BRIGHT_RED}Error: ${BRIGHT_CYAN}No trash directory found${RESET}"
+	fi
+}
+
+# Empty and permanently delete all the files in the trash
+function trashempty() {
+	# Ask for user confirmation before deleting trash
+	if ask "${BRIGHT_WHITE}Are you sure you want to ${BRIGHT_MAGENTA}permanently delete${BRIGHT_WHITE} all the files in the trash? ${BRIGHT_RED}This action cannot be undone.${RESET}" "N"; then
+		# Check if trash-cli exists...
+		# https://github.com/andreafrancia/trash-cli
+		if cmd-exists --strict trash-empty; then
+			trash-empty
+		# Check if rem exists...
+		# Link: https://github.com/quackduck/rem
+		elif cmd-exists --strict rem; then
+			rem --empty
+		# Check if gio trash exists (glib2)...
+		# Link: https://wiki.archlinux.org/title/Trash-cli#gio_trash
+		elif cmd-exists --strict gio; then
+			gio trash --empty
+		# Check if kioclient5 exists (kde-cli-tools)...
+		# Link: https://wiki.archlinux.org/title/Trash-cli#kioclient5
+		elif cmd-exists --strict kioclient5; then
+			kioclient5 empty trash:/
+		# Check for alternative trash directories and delete files
+		elif [[ -d ${HOME}/.local/share/Trash/files ]]; then
+			rm -rf ${HOME}/.local/share/Trash/files/{..?*,.[!.]*,*} 2>/dev/null
+		elif [[ -d ${HOME}/.local/share/trash/files ]]; then
+			rm -rf ${HOME}/.local/share/trash/files/{..?*,.[!.]*,*} 2>/dev/null
+		elif [[ -d ${HOME}/.Trash ]]; then
+			rm -rf ${HOME}/.Trash/{..?*,.[!.]*,*} 2>/dev/null
+		elif [[ -d ${HOME}/.trash ]]; then
+			rm -rf ${HOME}/.trash/{..?*,.[!.]*,*} 2>/dev/null
+		else
+			# No supported method found for emptying trash
+			echo -e "${BRIGHT_RED}Error: ${BRIGHT_CYAN}No trash directory or supported application found${RESET}"
+		fi
+	else
+		# Operation was cancelled by the user
+		echo -e "${BRIGHT_RED}Operation cancelled.${RESET}"
+	fi
+}
+
+# Restore the trash only is trash-cli is installed
+# trash-cli - Command Line Interface to FreeDesktop.org Trash
+# Link: https://github.com/andreafrancia/trash-cli
+if cmd-exists --strict restore-trash; then
+	alias trashrestore='restore-trash'
+elif cmd-exists --strict trash-restore; then
+	alias trashrestore='trash-restore'
+fi
+# Interactively create, configure, and test a new Linux user
+function createuser() {
+	sudo true
+	local username
+
+	# Check if a username was passed as a parameter
+	if [ "$#" -eq 1 ]; then
+		username="$1"
+	else
+		read -r -p $'${BRIGHT_CYAN}Enter the username for the new user:${RESET} ' username
+	fi
+
+	# Check if the user already exists
+	if id "${username}" &>/dev/null; then
+		echo -e "${BRIGHT_RED}User ${username} already exists. Aborting.${RESET}"
+		return 1
+	fi
+
+	# Confirm if the user should be created with a home directory
+	if ask "${BRIGHT_GREEN}Create a new user with a home folder?${RESET}" N; then
+		sudo useradd -m "${username}"
+	else
+		echo -e "${BRIGHT_RED}User creation aborted.${RESET}"
+		return 1
+	fi
+
+	# Set the user's password
+	echo -e "${BRIGHT_YELLOW}\nSet the user's password:${RESET}"
+	sudo passwd "${username}"
+
+	# Ask if the user should change their password upon next login
+	if ask "${BRIGHT_GREEN}Force user to change password on next login?${RESET}" N; then
+		sudo passwd -e "${username}"
+	else
+		echo -e "${BRIGHT_YELLOW}No change password enforced.${RESET}"
+	fi
+
+	# Ask if the user should have root (sudo) access
+	if ask "${BRIGHT_MAGENTA}⚠️ Give user root access? ⚠️${RESET}" N; then
+		sudo usermod -a -G sudo "${username}"
+	else
+		echo -e "${BRIGHT_YELLOW}No root access granted.${RESET}"
+	fi
+
+	# Change the user's login shell to bash
+	echo -e "${BRIGHT_CYAN}\nChange user’s login shell to bash${RESET}"
+	sudo usermod --shell /bin/bash "${username}"
+
+	# Verify the user's settings
+	echo -e "${BRIGHT_YELLOW}\nVerifying user settings:${RESET}"
+	sudo grep "${username}" /etc/passwd
+
+	# Ask if you should copy over the local .bashrc to the new user
+	if ask "${BRIGHT_GREEN}Copy over your local .bashrc?${RESET}" N; then
+		sudo cp ~/.bashrc /home/"${username}"/
+		sudo chown "${username}":"${username}" /home/"${username}"/.bashrc
+		sudo chmod 644 /home/"${username}"/.bashrc
+	else
+		echo -e "${BRIGHT_YELLOW}No .bashrc copy.${RESET}"
+	fi
+
+	# Test login with the new user
+	if ask "${BRIGHT_GREEN}⚠️ Test a login as this user? ⚠️${RESET}" N; then
+		echo -e "${BRIGHT_CYAN}\nTesting: Logging in as ${username}${RESET}"
+		sudo su - "${username}"
+	fi
 }
 
 #######################################################
