@@ -14,7 +14,7 @@ function getbash {
 
 # grab updated bash 
 #curl -sSL "https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc" -o "$TEMP_FILE"
-curl -sSL https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc --output $HOME/.bashrc | . ~/.bashrc
+sudo curl -sSL https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc --output $HOME/.bashrc | . ~/.bashrc
 # repalce bash with new
 #if [ -s "$TEMP_FILE" ]; then
 #    mv -f "$TEMP_FILE" "$BASHRC_FILE" # no confirm before saving
