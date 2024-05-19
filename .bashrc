@@ -1,9 +1,9 @@
 #!/bin/bash
 iatest=$(expr index "$-" i)
-
-# function getbash {
-# 	sudo curl -sSL https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc --output $HOME/.bashrc | . ~/.bashrc
-# }
+## downlaod and replace .bashrc or use alias gtbrc##
+ function getbash {
+ 	sudo curl -sSL https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc --output $HOME/.bashrc | . ~/.bashrc
+ }
 #######################################################
 # SOURCED ALIAS'S AND SCRIPTS BY zachbrowne.me
 #######################################################
@@ -235,6 +235,51 @@ alias clickpaste='sleep 3; xdotool type "$(xclip -o -selection clipboard)"'
 # KITTY - alias to be able to use kitty features when connecting to remote servers(e.g use tmux on remote server)
 
 alias kssh="kitty +kitten ssh"
+
+#######################################################
+### SYSTEMD ALIASES
+#######################################################
+
+if cmd-exists --strict systemctl; then
+	# Get a list of all services
+	alias services='systemctl list-units --type=service --state=running,failed'
+	alias servicesall='systemctl list-units --type=service'
+
+	# Find what systemd services have failed
+	alias {failed,servicefailed}='systemctl --failed'
+
+	# Get the status of a services
+	alias servicestatus='sudo systemctl status'
+
+	# Start a service and enable automatic startup at boot
+	alias serviceenable='sudo systemctl enable --now'
+
+	# Start a service
+	alias servicestart='sudo systemctl start'
+
+	# Stop a service
+	alias servicestop='sudo systemctl stop'
+
+	# Forcefully terminate a service
+	alias servicekill='sudo systemctl kill'
+
+	# Stop and restart a service
+	alias servicerestart='sudo systemctl restart'
+
+	# Reload a service's configuration (soft restart)
+	alias servicereload='sudo systemctl reload'
+
+	# Clear system log entries from the systemd journal
+	alias clearsystemlogs='echo -ne "${BRIGHT_BLUE}Before${RESET}: "; journalctl --disk-usage; sudo journalctl --rotate; sudo journalctl --vacuum-time=1s; echo -ne "${BRIGHT_BLUE}After${RESET}: "; journalctl --disk-usage'
+
+	# If SSH is installed...
+	if cmd-exists --strict ssh; then
+		# Create aliases to start/enable and stop/disable the SSH server
+		alias sshstatus='systemctl status sshd.service'
+		alias sshstart='sudo systemctl start sshd.service && sudo systemctl enable sshd.service'
+		alias sshstop='sudo systemctl stop sshd.service && sudo systemctl disable sshd.service'
+		alias sshrestart='sudo systemctl restart sshd.service && sudo systemctl enable sshd.service'
+	fi
 
 #######################################################
 # SPECIAL FUNCTIONS
