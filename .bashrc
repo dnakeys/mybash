@@ -458,7 +458,6 @@ install_bashrc_support() {
 			echo "Unknown distribution"
 			;;
 	esac
-	fi
 }
 
 # IP address lookup
