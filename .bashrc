@@ -598,17 +598,24 @@ function whatsmyip ()
 			else
 				echo "systemd-resolved is not active, unable to flush DNS cache"
 			fi
-function netinfo()
-{
+ netinfo() {
 	echo "--------------- Network Information ---------------"
+	/sbin/ifconfig | awk /'inet addr/ {print $2}'
+	echo ""
+	/sbin/ifconfig | awk /'Bcast/ {print $3}'
+	echo ""
+	/sbin/ifconfig | awk /'inet addr/ {print $4}'
+
+	/sbin/ifconfig | awk /'HWaddr/ {print $4,$5}'
 	ip a | awk '/^[0-9]+:/{gsub(/:/,"",$2); device=$2} /^[[:space:]]*inet /{print "Device: " device "  IP: " $2}' # shows all devices with ip's
-  	echo ""
- 	/sbin/ifconfig | awk /'Bcast/ {print $3}'
- 	echo ""
- 	/sbin/ifconfig | awk /'inet addr/ {print $4}'
- 	/sbin/ifconfig | awk /'HWaddr/ {print $4,$5}'
+# '
+# 	echo ""
+# 	/sbin/ifconfig | awk /'Bcast/ {print $3}'
+# 	echo ""
+# 	/sbin/ifconfig | awk /'inet addr/ {print $4}'
+# 	/sbin/ifconfig | awk /'HWaddr/ {print $4,$5}'
 	echo "---------------------------------------------------"
- }
+}
 # Show open ports
 alias ports='netstat -tulanp'
 
