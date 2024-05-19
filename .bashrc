@@ -2,7 +2,7 @@
 iatest=$(expr index "$-" i)
 
 ###########  Get bash update from github ###########
-function getbash() {
+function getbash {
 REPO_URL="https://github.com/dnakeys/mybash.git"
 BRANCH="main"  # Change this to your branch name
 #
@@ -20,8 +20,7 @@ if [ -s "$TEMP_FILE" ]; then
     mv -f "$TEMP_FILE" "$BASHRC_FILE" # no confirm before saving
    # mv  "$TEMP_FILE" "$BASHRC_FILE" # will ask for confrm before saving
     echo "Updated .bashrc successfully."
-	~/.bashrc
-else
+	else
     echo "Failed to update .bashrc."
 	
 fi
