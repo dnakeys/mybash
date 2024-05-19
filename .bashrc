@@ -493,7 +493,7 @@ netinfo() {
 # 	/sbin/ifconfig | awk /'inet addr/ {print $4}'
 # 	/sbin/ifconfig | awk /'HWaddr/ {print $4,$5}'
 	echo "---------------------------------------------------"
-
+}
 # View Apache logs
 apachelog() {
 	if [ -f /etc/httpd/conf/httpd.conf ]; then
