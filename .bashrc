@@ -280,7 +280,7 @@ if cmd-exists --strict systemctl; then
 		alias sshstop='sudo systemctl stop sshd.service && sudo systemctl disable sshd.service'
 		alias sshrestart='sudo systemctl restart sshd.service && sudo systemctl enable sshd.service'
 	fi
-
+fi
 #######################################################
 # SPECIAL FUNCTIONS
 #######################################################
@@ -502,6 +502,7 @@ install_bashrc_support() {
 			echo "Unknown distribution"
 			;;
 	esac
+	fi
 }
 
 # IP address lookup
@@ -616,3 +617,4 @@ export PATH=$PATH:"$HOME/.local/bin:$HOME/.cargo/bin:/var/lib/flatpak/exports/bi
 # Install Starship - curl -sS https://starship.rs/install.sh | sh
 eval "$(starship init bash)"
 eval "$(zoxide init bash)"
+fi
