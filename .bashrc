@@ -146,7 +146,7 @@ alias freshclam='sudo freshclam'
 alias vi='nvim'
 alias svi='sudo vi'
 alias vis='nvim "+set si"'
-
+alias upmyshit='sudo apt update -y && sudo apt upgrade -y && sudo apt autoremove -y'
 # Change directory aliases
 alias home='cd ~'
 alias cd..='cd ..'
