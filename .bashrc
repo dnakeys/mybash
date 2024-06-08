@@ -121,7 +121,7 @@ alias web='cd /var/www/html'
 alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
 
 # Edit this .bashrc file
-alias ebrc='edit ~/.bashrc'
+alias ebrc='sudo nano ~/.bashrc'
 alias rbrc='. ~/.bashrc'
 alias gtbrc='sudo curl -sSL https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc --output ~/.bashrc | . ~/.bashrc'
 
