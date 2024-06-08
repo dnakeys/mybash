@@ -148,7 +148,7 @@ alias svi='sudo vi'
 alias vis='nvim "+set si"'
 #alias upmyshit='sudo apt update -y && sudo apt upgrade -y && sudo apt autoremove -y'
 alias upmyshit='sudo apt update -y && sudo apt full-upgrade -y && sudo apt autoremove -y && sudo apt clean -y && sudo apt autoclean -y'
-alias upnala='sudo nala update -y && sudo nala upgrade -y && sudo nala autopurge -y && sudo nala autoremove -y && sudo nala clean -y'
+alias upnala='sudo nala update && sudo nala upgrade && sudo nala autopurge && sudo nala autoremove && sudo nala clean'
 # Change directory aliases
 alias home='cd ~'
 alias cd..='cd ..'
