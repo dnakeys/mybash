@@ -57,11 +57,11 @@ if [[ $iatest -gt 0 ]]; then bind "set show-all-if-ambiguous On"; fi
 # Set the default editor
 export EDITOR=nano
 export VISUAL=nano
-alias pico='edit'
-alias spico='sedit'
-alias nano='edit'
-alias snano='sedit'
-alias vim='nvim'
+# alias pico='edit'
+# alias spico='sedit'
+# alias nano='edit'
+# alias snano='sedit'
+# alias vim='nvim'
 # Set some defaults for nano
 # NOTE: Depending on the version of nano you have, --linenumbers and --suspend is helpful
 if cmd-exists --strict nano; then
