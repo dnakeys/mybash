@@ -157,6 +157,8 @@ installDepend
 installStarship
 installZoxide
 install_additional_dependencies
+installNala
+installTldr
 
 if linkConfig; then
     echo -e "${GREEN}Done!\nrestart your shell to see the changes.${RC}"
