@@ -107,7 +107,8 @@ installZoxide() {
 
 install_additional_dependencies() {
    sudo apt update
-   sudo apt install -y trash-cli bat meld jpico nala
+   sudo apt install -y trash-cli bat meld jpico
+   sudo apt install -y nala
    sudo nala install tldr
    tldr -u
 }
