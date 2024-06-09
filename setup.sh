@@ -105,31 +105,11 @@ installZoxide() {
     fi
 }
 
-installNala() {
-    if command_exists nala; then
-        echo "Nala already installed"
-        return
-    fi
-         else 
-        sudo apt install nala;
-        exit 1
-    fi
-}
-
-installTldr() {
-    if command_exists tldr; then
-        echo "TLDR already installed"
-        return
-    fi
-     else 
-        sudo nala install tldr | tldr -u;
-        exit 1
-    fi
-}
-
 install_additional_dependencies() {
    sudo apt update
-   sudo apt install -y trash-cli bat meld jpico
+   sudo apt install -y trash-cli bat meld jpico nala
+   sudo nala install tldr
+   tldr -u
 }
 
 linkConfig() {
