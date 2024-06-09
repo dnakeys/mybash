@@ -122,7 +122,7 @@ installTldr() {
         return
     fi
      else 
-        sudo nala install ntldr | tldr -u;
+        sudo nala install tldr | tldr -u;
         exit 1
     fi
 }
