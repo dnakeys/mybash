@@ -497,6 +497,110 @@ netinfo() {
 	echo "---------------------------------------------------"
 	sparkbars
 }
+# Find IP used to route to outside world
+
+# IPv4dev=$(ip route get 8.8.8.8 | awk '{for(i=1;i<=NF;i++)if($i~/dev/)print $(i+1)}')
+# IPv4addr=$(ip route get 8.8.8.8| awk '{print $7}')
+# IPv4gw=$(ip route get 8.8.8.8 | awk '{print $3}')
+# availableInterfaces=$(ip -o link | grep "state UP" | awk '{print $2}' | cut -d':' -f1 | cut -d'@' -f1)
+# dhcpcdFile=/etc/dhcpcd.conf
+setClientDNS() {
+    DNSChoseCmd=(whiptail --separate-output --radiolist "Select the DNS Provider for your VPN Clients. To use your own, select Custom." ${r} ${c} 6)
+    DNSChooseOptions=(Google "" on
+            OpenDNS "" off
+            Level3 "" off
+            DNS.WATCH "" off
+            Norton "" off
+            Custom "" off)
+
+    if DNSchoices=$("${DNSChoseCmd[@]}" "${DNSChooseOptions[@]}" 2>&1 >/dev/tty)
+    then
+        case ${DNSchoices} in
+        Google)
+            echo "::: Using Google DNS servers."
+            OVPNDNS1="8.8.8.8"
+            OVPNDNS2="8.8.4.4"
+            # These are already in the file
+            ;;
+        OpenDNS)
+            echo "::: Using OpenDNS servers."
+            OVPNDNS1="208.67.222.222"
+            OVPNDNS2="208.67.220.220"
+            $SUDO sed -i '0,/\(dhcp-option DNS \)/ s/\(dhcp-option DNS \).*/\1'${OVPNDNS1}'\"/' /etc/openvpn/server.conf
+            $SUDO sed -i '0,/\(dhcp-option DNS \)/! s/\(dhcp-option DNS \).*/\1'${OVPNDNS2}'\"/' /etc/openvpn/server.conf
+            ;;
+        Level3)
+            echo "::: Using Level3 servers."
+            OVPNDNS1="209.244.0.3"
+            OVPNDNS2="209.244.0.4"
+            $SUDO sed -i '0,/\(dhcp-option DNS \)/ s/\(dhcp-option DNS \).*/\1'${OVPNDNS1}'\"/' /etc/openvpn/server.conf
+            $SUDO sed -i '0,/\(dhcp-option DNS \)/! s/\(dhcp-option DNS \).*/\1'${OVPNDNS2}'\"/' /etc/openvpn/server.conf
+            ;;
+        DNS.WATCH)
+            echo "::: Using DNS.WATCH servers."
+            OVPNDNS1="84.200.69.80"
+            OVPNDNS2="84.200.70.40"
+            $SUDO sed -i '0,/\(dhcp-option DNS \)/ s/\(dhcp-option DNS \).*/\1'${OVPNDNS1}'\"/' /etc/openvpn/server.conf
+            $SUDO sed -i '0,/\(dhcp-option DNS \)/! s/\(dhcp-option DNS \).*/\1'${OVPNDNS2}'\"/' /etc/openvpn/server.conf
+            ;;
+        Norton)
+            echo "::: Using Norton ConnectSafe servers."
+            OVPNDNS1="199.85.126.10"
+            OVPNDNS2="199.85.127.10"
+            $SUDO sed -i '0,/\(dhcp-option DNS \)/ s/\(dhcp-option DNS \).*/\1'${OVPNDNS1}'\"/' /etc/openvpn/server.conf
+            $SUDO sed -i '0,/\(dhcp-option DNS \)/! s/\(dhcp-option DNS \).*/\1'${OVPNDNS2}'\"/' /etc/openvpn/server.conf
+            ;;
+        Custom)
+            until [[ $DNSSettingsCorrect = True ]]
+            do
+                strInvalid="Invalid"
+
+                if OVPNDNS=$(whiptail --backtitle "Specify Upstream DNS Provider(s)"  --inputbox "Enter your desired upstream DNS provider(s), seperated by a comma.\n\nFor example '8.8.8.8, 8.8.4.4'" ${r} ${c} "" 3>&1 1>&2 2>&3)
+                then
+                    OVPNDNS1=$(echo "$OVPNDNS" | sed 's/[, \t]\+/,/g' | awk -F, '{print$1}')
+                    OVPNDNS2=$(echo "$OVPNDNS" | sed 's/[, \t]\+/,/g' | awk -F, '{print$2}')
+                    if ! valid_ip "$OVPNDNS1" || [ ! "$OVPNDNS1" ]; then
+                        OVPNDNS1=$strInvalid
+                    fi
+                    if ! valid_ip "$OVPNDNS2" && [ "$OVPNDNS2" ]; then
+                        OVPNDNS2=$strInvalid
+                    fi
+                else
+                    echo "::: Cancel selected, exiting...."
+                    exit 1
+                fi
+                if [[ $OVPNDNS1 == "$strInvalid" ]] || [[ $OVPNDNS2 == "$strInvalid" ]]; then
+                    whiptail --msgbox --backtitle "Invalid IP" --title "Invalid IP" "One or both entered IP addresses were invalid. Please try again.\n\n    DNS Server 1:   $OVPNDNS1\n    DNS Server 2:   $OVPNDNS2" ${r} ${c}
+                    if [[ $OVPNDNS1 == "$strInvalid" ]]; then
+                        OVPNDNS1=""
+                    fi
+                    if [[ $OVPNDNS2 == "$strInvalid" ]]; then
+                        OVPNDNS2=""
+                    fi
+                    DNSSettingsCorrect=False
+                else
+                    if (whiptail --backtitle "Specify Upstream DNS Provider(s)" --title "Upstream DNS Provider(s)" --yesno "Are these settings correct?\n    DNS Server 1:   $OVPNDNS1\n    DNS Server 2:   $OVPNDNS2" ${r} ${c}) then
+                        DNSSettingsCorrect=True
+                        $SUDO sed -i '0,/\(dhcp-option DNS \)/ s/\(dhcp-option DNS \).*/\1'${OVPNDNS1}'\"/' /etc/openvpn/server.conf
+                        if [ -z ${OVPNDNS2} ]; then
+                            $SUDO sed -i '/\(dhcp-option DNS \)/{n;N;d}' /etc/openvpn/server.conf
+                        else
+                            $SUDO sed -i '0,/\(dhcp-option DNS \)/! s/\(dhcp-option DNS \).*/\1'${OVPNDNS2}'\"/' /etc/openvpn/server.conf
+                        fi
+                    else
+                        # If the settings are wrong, the loop continues
+                        DNSSettingsCorrect=False
+                    fi
+                fi
+        done
+        ;;
+    esac
+    else
+        echo "::: Cancel selected. Exiting..."
+        exit 1
+    fi
+}
+
 # View Apache logs
 apachelog() {
 	if [ -f /etc/httpd/conf/httpd.conf ]; then
