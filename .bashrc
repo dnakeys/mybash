@@ -2,7 +2,7 @@
 iatest=$(expr index "$-" i)
 ## downlaod and replace .bashrc or use alias gtbrc##
  function getbash {
- 	sudo cp /etc/skel/.bashrc .bashrc.bkp
+ 	sudo cp /etc/skel/.bashrc /etc/skel/.bashrc.bkp
 	sudo curl -sSL https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc --output /etc/skel/.bashrc
 	sudo curl -sSL https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc --output $HOME/.bashrc | . ~/.bashrc
 
