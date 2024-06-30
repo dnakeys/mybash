@@ -197,6 +197,7 @@ alias h="history | grep "
 # Search running processes
 alias p="ps aux | grep "
 alias topcpu="/bin/ps -eo pcpu,pid,user,args | sort -k 1 -r | head -10"
+alias chekports="ss -tulpn" # find listening ports
 
 # Search files in the current folder
 alias f="find . | grep "
