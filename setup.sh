@@ -157,6 +157,9 @@ installZoxide
 install_additional_dependencies
 installNala
 installTldr
+/ ~/.bashrc
+install_bashrc_support
+getbash
 
 if linkConfig; then
     echo -e "${GREEN}Done!\nrestart your shell to see the changes.${RC}"
