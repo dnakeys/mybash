@@ -71,6 +71,20 @@ checkEnv() {
     fi
 
 }
+nano_settings() {
+    # Step 1: Run the curl command to download and run the install script
+    curl https://raw.githubusercontent.com/scopatz/nanorc/master/install.sh | sh
+
+# Step 2: Append a line to ~/.nanorc to include the nanorc files
+#install_path="$HOME/.nano"  # Default install path
+    echo "include $install_path/*.nanorc" >> ~/.nanorc
+
+# Step 3: Add a # to the beginning of line 26 in the nanorc file
+    sed -i '26s/^/#/' "/home/dnakeys/.nano/nanorc.nanorc"
+
+# Step 4: Insert set linenumbers as the first line of ~/.nanorc
+    sed -i '1s/^/set linenumbers\n/' ~/.nanorc   
+}
 
 installDepend() {
     ## Check for dependencies.
@@ -160,6 +174,7 @@ installTldr
 / ~/.bashrc
 install_bashrc_support
 getbash
+nano_settings
 
 if linkConfig; then
     echo -e "${GREEN}Done!\nrestart your shell to see the changes.${RC}"
