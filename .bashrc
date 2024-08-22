@@ -524,11 +524,11 @@ netinfo() {
 }
 # Find IP used to route to outside world
 
-IPv4dev=$(ip route get 8.8.8.8 | awk '{for(i=1;i<=NF;i++)if($i~/dev/)print $(i+1)}')
-IPv4addr=$(ip route get 8.8.8.8| awk '{print $7}')
-IPv4gw=$(ip route get 8.8.8.8 | awk '{print $3}')
-availableInterfaces=$(ip -o link | grep "state UP" | awk '{print $2}' | cut -d':' -f1 | cut -d'@' -f1)
-dhcpcdFile=/etc/dhcpcd.conf
+alias IPv4dev=$(ip route get 8.8.8.8 | awk '{for(i=1;i<=NF;i++)if($i~/dev/)print $(i+1)}')
+alias IPv4addr=$(ip route get 8.8.8.8| awk '{print $7}')
+alias IPv4gw=$(ip route get 8.8.8.8 | awk '{print $3}')
+alias availableInterfaces=$(ip -o link | grep "state UP" | awk '{print $2}' | cut -d':' -f1 | cut -d'@' -f1)
+alias dhcpcdFile=/etc/dhcpcd.conf
 
 setClientDNS() {
     DNSChoseCmd=(whiptail --separate-output --radiolist "Select the DNS Provider for your VPN Clients. To use your own, select Custom." ${r} ${c} 6)
