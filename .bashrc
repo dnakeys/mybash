@@ -1865,7 +1865,139 @@ function findtext() {
 		| awk -v len=${LINE_LENGTH_CUTOFF} '{ $0=substr($0, 1, len); print $0 }'
 	fi
 }
+# Creates a menu for selecting an item from a list from either piped in
+# multi-line text or command line arguments. Use --picker=app to force a picker
+# Example: ls -1 ~ | createmenu
+# Example: echo -e "Jen\nTom\nJoe Bob\nAmy\nPat" | sort | createmenu
+# Example: cat "menuitems.txt" | createmenu
+# Example: _TMUX_SESSION="$(tmux ls -F "#{session_name}" 2> /dev/null | createmenu)"
+# Example: createmenu 'Option 1' 'Option 2' 'Option 3'
+function createmenu() {
+	# Valid pickers to detect and automatically used in order
+	local _VALID_PICKERS="${_PREFERRED_PICKER} fzy sk fzf peco percol pick icepick selecta sentaku zf dmenu rofi wofi"
 
+	# Check if command line arguments are provided and if input is piped in
+	if [ "$#" -eq 0 ] && [ -t 0 ]; then
+		echo -e "${BRIGHT_WHITE}createmenu:${RESET} Creates a menu for selecting an item from a list"
+		echo -e "${BRIGHT_WHITE}It takes input from either piped in multi-line text or command line arguments${RESET}"
+		echo -e "${BRIGHT_WHITE}Supported optional pickers are:${RESET}"
+		echo -e "  ${BRIGHT_GREEN}fzy, sk (skim), fzf, peco, percol, pick, icepick, selecta, sentaku, zf, dmenu, rofi, wofi${RESET}"
+		echo -e "${BRIGHT_WHITE}Usage examples:${RESET}"
+		echo -e "  With piped input:"
+		echo -e "    ${BRIGHT_YELLOW}ls${BRIGHT_CYAN} -1 ~ | ${BRIGHT_MAGENTA}createmenu${RESET}"
+		echo -e "    ${BRIGHT_CYAN}echo -e ${BRIGHT_YELLOW}\"Jen\\\\nTom\\\\nJoe Bob\\\\nAmy\\\\nPat\"${BRIGHT_CYAN} | sort | ${BRIGHT_MAGENTA}createmenu${RESET}"
+		echo -e "    ${BRIGHT_CYAN}cat ${BRIGHT_YELLOW}'menuitems.txt'${BRIGHT_CYAN} | ${BRIGHT_MAGENTA}createmenu${RESET}"
+		echo -e "    ${BRIGHT_CYAN}_TMUX_SESSION=\"\$(${BRIGHT_YELLOW}tmux ls -F '#{session_name}' 2> /dev/null${BRIGHT_CYAN} | ${BRIGHT_MAGENTA}createmenu${BRIGHT_CYAN})\"${RESET}"
+		echo -e "  With command line arguments:"
+		echo -e "    ${BRIGHT_MAGENTA}createmenu ${BRIGHT_YELLOW}'Option 1' 'Option 2' 'Option 3'${RESET}"
+		echo -e "  With a specified picker:"
+		echo -e "    ${BRIGHT_MAGENTA}createmenu ${BRIGHT_CYAN}--picker=${BRIGHT_GREEN}rofi ${BRIGHT_YELLOW}\"Option 1\" \"Option 2\" \"Option 3\"${RESET}"
+		echo -e "    ${BRIGHT_CYAN}echo -e ${BRIGHT_YELLOW}\"Red\\\\nGreen\\\\nBlue\"${BRIGHT_CYAN} | ${BRIGHT_MAGENTA}createmenu${BRIGHT_CYAN} --picker=${BRIGHT_GREEN}dmenu${RESET}"
+		return 1
+	fi
+
+	# Check for --picker parameter and remove it from arguments
+	local _PICKER
+	local _FOUND_PICKER=false
+	local NEW_ARGS=()
+	for ARG in "$@"; do
+		if [[ "$ARG" == --picker=* ]]; then
+			_PICKER="${ARG#*=}"
+			if cmd-exists "${_PICKER}"; then
+				_FOUND_PICKER=true
+			else
+				echo -e "${BRIGHT_RED}Error: ${BRIGHT_CYAN}The picker ${BRIGHT_YELLOW}${_PICKER}${BRIGHT_CYAN} is not available or installed${RESET}"
+				return 1
+			fi
+		else
+			NEW_ARGS+=("$ARG")
+		fi
+	done
+	set -- "${NEW_ARGS[@]}"
+
+	# If no specific picker is provided or the picker is not valid...
+	if [ "$_FOUND_PICKER" == false ]; then
+		# Loop through the list and see if one of them is installed
+		for _PICKER in $_VALID_PICKERS; do
+			if cmd-exists $_PICKER; then
+				_FOUND_PICKER=true
+				break
+			fi
+		done
+	fi
+
+	# Check if command line arguments are provided
+	if [ "$#" -gt 0 ]; then
+		local _INPUT=""
+		local _COUNT=0
+		for arg in "$@"; do
+			# Increase count for each argument
+			((_COUNT++))
+
+			# Add newline after each argument except the last
+			if [ $_COUNT -lt $# ]; then
+				_INPUT+="${arg}"$'\n'
+			else
+				_INPUT+="${arg}"
+			fi
+		done
+	else
+		# Get the piped in multiple lines of text
+		local _INPUT="$(</dev/stdin)"
+		# Count the lines of text
+		local _COUNT=$(echo "${_INPUT}" | wc -l)
+	fi
+
+	# If there is no input, just exit with an error
+	if [ -z "${_INPUT}" ]; then
+		return 1
+
+	# If there is only one line (or one argument), no choice is needed
+	elif [ ${_COUNT} -eq 1 ]; then
+		echo "${_INPUT}"
+		return 0
+	fi
+
+	# If we found a picker, use it
+	if [ "$_FOUND_PICKER" == true ]; then
+		# echo -e "${BRIGHT_MAGENTA}The picker is: ${BRIGHT_GREEN}$_PICKER${RESET}"
+		case $_PICKER in
+			dmenu)
+				echo "${_INPUT}" | dmenu -l 10
+				;;
+			rofi)
+				echo "${_INPUT}" | rofi -dmenu -i -no-custom -no-fixed-num-lines -p "Choose:"
+				;;
+			wofi)
+				echo "${_INPUT}" | wofi --show dmenu --insensitive --prompt "Choose:"
+				;;
+			*)
+				echo "${_INPUT}" | $_PICKER
+				;;
+		esac
+
+	# Use Bash's built in select option
+	else
+		# Parse only on new lines
+		local _IFS_OLD="${IFS}"
+		IFS=$'\n'
+
+		# Turn off globbing filename generation
+		set -f
+
+		# Show a list to pick an item from
+		select RESULT in ${_INPUT}; do
+			if [ -n "${RESULT}" ]; then
+				echo "${RESULT}"
+				break
+			fi
+		done < /dev/tty
+
+		# Restore settings
+		IFS="${_IFS_OLD}"
+		set +f
+	fi
+}
 # List and sort all function names from code files (with line numbers)
 function get-functions() {
 	# Check if a filename is provided
