@@ -142,7 +142,30 @@ install_additional_dependencies() {
    sudo apt install -y nala
    sudo nala install tldr
    tldr -u
-}
+install_additional_dependencies() {
+    case $(command -v apt || command -v zypper || command -v dnf || command -v pacman) in
+        *apt)
+            sudo apt update
+            sudo apt install -y neovim bat
+            ;;
+        *zypper)
+            sudo zypper refresh
+            sudo zypper install -y neovim bat
+            ;;
+        *dnf)
+            sudo dnf check-update
+            sudo dnf install -y neovim bat
+            ;;
+        *pacman)
+            sudo pacman -Syu
+            sudo pacman -S --noconfirm neovim bat
+            ;;
+        *)
+            echo "No supported package manager found. Please install neovim and bat manually."
+            exit 1
+            ;;
+    esac
+
 
 linkConfig() {
     ## Get the correct user home directory.
