@@ -737,7 +737,8 @@ fi
 # Alias to edit and reload  this .bashrc file
 alias {ebrc,editbashrc}='edit ~/.bashrc'
 alias {rbrc,reloadbashrc}='\clear; \source ~/.bashrc'
-
+alias rbrc='clear; source ~/.bashrc'
+alias reloadbashrc='clear; source ~/.bashrc'
 # Find the help file for this .bashrc file (type hlp or press CONTROL-H)
 if [[ -f "$HOME/.config/bashrc/help" ]]; then
 	_BASHRC_HELP="$HOME/.config/bashrc/help"
