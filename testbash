@@ -1,33 +1,13 @@
 #!/bin/bash
 iatest=$(expr index "$-" i)
-
-###########  Get bash update from github ###########
+## downlaod and replace .bashrc or use alias gtbrc##
 function getbash {
+	sudo cp /etc/skel/.bashrc /etc/skel/.bashrc.bkp
+	sudo curl -sSL https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc --output /etc/skel/.bashrc
 	sudo curl -sSL https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc --output $HOME/.bashrc | . ~/.bashrc
-}
-#REPO_URL="https://github.com/dnakeys/mybash.git"
-#BRANCH="main"  # Change this to your branch name
-#
-# Path to .bashrc file
-#BASHRC_FILE="$HOME/.bashrc"
 
-# temp save bash file
-#TEMP_FILE=$(mktemp)
-
-# grab updated bash 
-#curl -sSL "https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc" -o "$TEMP_FILE"
-
-# repalce bash with new
-#if [ -s "$TEMP_FILE" ]; then
-#    mv -f "$TEMP_FILE" "$BASHRC_FILE" # no confirm before saving
-   # mv  "$TEMP_FILE" "$BASHRC_FILE" # will ask for confrm before saving
-#    echo "Updated .bashrc successfully."
-	#else
-    #echo "Failed to update .bashrc."
 	
-#fi
 }
-####### end of update #########
 #######################################################
 # SOURCED ALIAS'S AND SCRIPTS BY zachbrowne.me
 #######################################################
@@ -46,25 +26,6 @@ if [ -f /usr/share/bash-completion/bash_completion ]; then
 elif [ -f /etc/bash_completion ]; then
 	. /etc/bash_completion
 fi
-# Check if a command or alias exists
-function cmd-exists() {
-	# If no arguments or just '--strict' is provided, show help message
-	if [[ -z "${1}" || (${#} -eq 1 && "${1}" == "--strict") ]]; then
-		echo -e "${BRIGHT_WHITE}cmd-exists:${RESET} Checks if a command or alias exists"
-		echo -e "${BRIGHT_WHITE}Options:${RESET}"
-		echo -e "  ${BRIGHT_YELLOW}--strict${RESET} or ${BRIGHT_YELLOW}-s${RESET} checks for executable commands only ${BRIGHT_RED}excluding aliases${RESET}"
-		echo -e "${BRIGHT_WHITE}Usage examples:${RESET}"
-		echo -e "  Check any command or alias:"
-		echo -e "    ${BRIGHT_GREEN}cmd-exists ${BRIGHT_YELLOW}ls${RESET}"
-		echo -e "  Check executable only ${BRIGHT_RED}(strict mode)${RESET}:"
-		echo -e "    ${BRIGHT_GREEN}cmd-exists ${BRIGHT_YELLOW}--strict ${BRIGHT_YELLOW}grep${RESET}"
-		echo -e "  Display this help message:"
-		echo -e "    ${BRIGHT_GREEN}cmd-exists${RESET}"
-		return 2  # Return code 2 to indicate incorrect usage
-	fi
-fi	
-
-
 
 #######################################################
 # EXPORTS
@@ -88,8 +49,8 @@ shopt -s histappend
 PROMPT_COMMAND='history -a'
 
 # Allow ctrl-S for history navigation (with ctrl-R)
-[[ $- == *i* ]] && stty -ixon
-
+#[[ $- == *i* ]] && stty -ixon
+#
 # Ignore case on auto-completion
 # Note: bind used instead of sticking these in .inputrc
 if [[ $iatest -gt 0 ]]; then bind "set completion-ignore-case on"; fi
@@ -100,11 +61,11 @@ if [[ $iatest -gt 0 ]]; then bind "set show-all-if-ambiguous On"; fi
 # Set the default editor
 export EDITOR=nano
 export VISUAL=nano
-alias pico='edit'
-alias spico='sedit'
-alias nano='edit'
-alias snano='sedit'
-alias vim='nvim'
+# alias pico='edit'
+# alias spico='sedit'
+# alias nano='edit'
+# alias snano='sedit'
+# alias vim='nvim'
 # Set some defaults for nano
 # NOTE: Depending on the version of nano you have, --linenumbers and --suspend is helpful
 if cmd-exists --strict nano; then
@@ -164,9 +125,9 @@ alias web='cd /var/www/html'
 alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
 
 # Edit this .bashrc file
-alias ebrc='edit ~/.bashrc'
+alias ebrc='sudo nano ~/.bashrc'
 alias rbrc='. ~/.bashrc'
-alias gbrc='getbash'
+alias gtbrc='sudo curl -sSL https://raw.githubusercontent.com/dnakeys/mybash/main/.bashrc --output ~/.bashrc | . ~/.bashrc'
 
 # Show help for this .bashrc file
 alias hlp='less ~/.bashrc_help'
@@ -189,7 +150,9 @@ alias freshclam='sudo freshclam'
 alias vi='nvim'
 alias svi='sudo vi'
 alias vis='nvim "+set si"'
-
+#alias upmyshit='sudo apt update -y && sudo apt upgrade -y && sudo apt autoremove -y'
+alias upmyshit='sudo apt update -y && sudo apt full-upgrade -y && sudo apt autoremove -y && sudo apt clean -y && sudo apt autoclean -y'
+alias upnala='sudo nala update && sudo nala upgrade && sudo nala autopurge && sudo nala autoremove && sudo nala clean'
 # Change directory aliases
 alias home='cd ~'
 alias cd..='cd ..'
@@ -234,6 +197,7 @@ alias h="history | grep "
 # Search running processes
 alias p="ps aux | grep "
 alias topcpu="/bin/ps -eo pcpu,pid,user,args | sort -k 1 -r | head -10"
+alias checkports="ss -tulpn" # find listening ports
 
 # Search files in the current folder
 alias f="find . | grep "
@@ -279,50 +243,6 @@ alias clickpaste='sleep 3; xdotool type "$(xclip -o -selection clipboard)"'
 
 alias kssh="kitty +kitten ssh"
 
-#######################################################
-### SYSTEMD ALIASES
-#######################################################
-
-if cmd-exists --strict systemctl; then
-	# Get a list of all services
-	alias services='systemctl list-units --type=service --state=running,failed'
-	alias servicesall='systemctl list-units --type=service'
-
-	# Find what systemd services have failed
-	alias {failed,servicefailed}='systemctl --failed'
-
-	# Get the status of a services
-	alias servicestatus='sudo systemctl status'
-
-	# Start a service and enable automatic startup at boot
-	alias serviceenable='sudo systemctl enable --now'
-
-	# Start a service
-	alias servicestart='sudo systemctl start'
-
-	# Stop a service
-	alias servicestop='sudo systemctl stop'
-
-	# Forcefully terminate a service
-	alias servicekill='sudo systemctl kill'
-
-	# Stop and restart a service
-	alias servicerestart='sudo systemctl restart'
-
-	# Reload a service's configuration (soft restart)
-	alias servicereload='sudo systemctl reload'
-
-	# Clear system log entries from the systemd journal
-	alias clearsystemlogs='echo -ne "${BRIGHT_BLUE}Before${RESET}: "; journalctl --disk-usage; sudo journalctl --rotate; sudo journalctl --vacuum-time=1s; echo -ne "${BRIGHT_BLUE}After${RESET}: "; journalctl --disk-usage'
-
-	# If SSH is installed...
-	if cmd-exists --strict ssh; then
-		# Create aliases to start/enable and stop/disable the SSH server
-		alias sshstatus='systemctl status sshd.service'
-		alias sshstart='sudo systemctl start sshd.service && sudo systemctl enable sshd.service'
-		alias sshstop='sudo systemctl stop sshd.service && sudo systemctl disable sshd.service'
-		alias sshrestart='sudo systemctl restart sshd.service && sudo systemctl enable sshd.service'
-	fi
 
 #######################################################
 # SPECIAL FUNCTIONS
@@ -350,32 +270,6 @@ extract() {
 		fi
 	done
 }
-# Depending on the installed package managers, set up some package aliases
-
-if cmd-exists --strict nala; then # Debian/Ubuntu/Raspbian
-	# Link: https://gitlab.com/volian/nala
-	# Link: https://itsfoss.com/nala/
-	alias has='nala show'
-	alias pkgupdateall='sudo nala update && sudo nala upgrade && if type pacstall >/dev/null 2>&1; then pacstall --upgrade; fi'
-	alias pkgupdate='sudo nala update'
-	alias pkginstall='sudo nala install --install-suggests'
-	alias pkgremove='sudo nala remove'
-	alias pkgclean='sudo nala clean --fix-broken'
-	alias pkgsearch='sudo nala search'
-	alias pkglist='sudo nala list --installed'
-	alias pkgmirrors='sudo nala fetch'
-elif cmd-exists --strict apt; then # Debian/Ubuntu/Raspbian
-	# Link: https://itsfoss.com/apt-command-guide/
-	alias has='apt show'
-	alias pkgupdateall='sudo apt update --assume-yes && sudo apt upgrade --assume-yes && if type pacstall >/dev/null 2>&1; then pacstall --upgrade; fi && if type tldr >/dev/null 2>&1; then tldr --update; fi'
-	alias pkgupdate='sudo apt-get install --only-upgrade'
-	alias pkginstall='sudo apt install'
-	alias pkgremove='sudo apt remove'
-	alias pkgclean='sudo apt autoremove'
-	alias pkgsearch='sudo apt search'
-	alias pkglist='sudo apt list --installed'
-	alias pkgcheck='sudo apt update --assume-yes && apt list --upgradable'
-fi
 
 # Searches for text in all files in the current folder
 ftext() {
@@ -580,49 +474,137 @@ function whatsmyip ()
 	# Internal IP Lookup.
 	if [ -e /sbin/ip ]; then
 		echo -n "Internal IP: "
-		/sbin/ip addr show wlan0 | grep "inet " | awk -F: '{print $1}' | awk '{print $2}'
+		/sbin/ip addr show eth0 | grep "inet " | awk -F: '{print $1}' | awk '{print $2}'
 	else
 		echo -n "Internal IP: "
-		/sbin/ifconfig wlan0 | grep "inet " | awk -F: '{print $1} |' | awk '{print $2}'
+		/sbin/ifconfig eth00 | grep "inet " | awk -F: '{print $1} |' | awk '{print $2}'
 	fi
 
 	# External IP Lookup
 	echo -n "External IP: "
 	curl -s ifconfig.me
 }
-	# Flushing and restart the DNS cache if installed and running
-	function flushdns() {
-		# Check if systemd-resolved is available
-		if cmd-exists --strict systemd-resolve; then
-			# Check if systemd-resolved service is active
-			if systemctl is-active systemd-resolved >/dev/null; then
-				# Flush DNS cache and restart systemd-resolved
-				sudo systemd-resolve --flush-caches
-				sudo systemctl restart systemd-resolved
-				echo "DNS cache flushed and systemd-resolved restarted"
-			else
-				echo "systemd-resolved is not active, unable to flush DNS cache"
-			fi
-netinfo() {
-	echo "--------------- Network Information ---------------"
-	/sbin/ifconfig | awk /'inet addr/ {print $2}'
-	echo ""
-	/sbin/ifconfig | awk /'Bcast/ {print $3}'
-	echo ""
-	/sbin/ifconfig | awk /'inet addr/ {print $4}'
-
-	/sbin/ifconfig | awk /'HWaddr/ {print $4,$5}'
-	ip a | awk '/^[0-9]+:/{gsub(/:/,"",$2); device=$2} /^[[:space:]]*inet /{print "Device: " device "  IP: " $2}' # shows all devices with ip's
-# '
-# 	echo ""
-# 	/sbin/ifconfig | awk /'Bcast/ {print $3}'
-# 	echo ""
-# 	/sbin/ifconfig | awk /'inet addr/ {print $4}'
-# 	/sbin/ifconfig | awk /'HWaddr/ {print $4,$5}'
-	echo "---------------------------------------------------"
+# Prints random height bars across the width of the screen
+# (great with lolcat application on new terminal windows)
+function sparkbars() {
+	columns=$(tput cols)
+	chars=▁▂▃▄▅▆▇█
+	for ((i = 1; i <= $columns; i++))
+	do
+		echo -n "${chars:RANDOM%${#chars}:1}"
+	done
+	echo
 }
-# Show open ports
-alias ports='netstat -tulanp'
+netinfo() {
+    sparkbars
+	echo "--------------- Network Information ---------------"
+	ip a | awk '/^[0-9]+:/{gsub(/:/,"",$2); device=$2} /^[[:space:]]*inet /{print "Device: " device "  IP: " $2}' # shows all devices with ip's
+	echo "---------------------------------------------------"
+	sparkbars
+}
+# Find IP used to route to outside world
+
+# IPv4dev=$(ip route get 8.8.8.8 | awk '{for(i=1;i<=NF;i++)if($i~/dev/)print $(i+1)}')
+# IPv4addr=$(ip route get 8.8.8.8| awk '{print $7}')
+# IPv4gw=$(ip route get 8.8.8.8 | awk '{print $3}')
+# availableInterfaces=$(ip -o link | grep "state UP" | awk '{print $2}' | cut -d':' -f1 | cut -d'@' -f1)
+# dhcpcdFile=/etc/dhcpcd.conf
+setClientDNS() {
+    DNSChoseCmd=(whiptail --separate-output --radiolist "Select the DNS Provider for your VPN Clients. To use your own, select Custom." ${r} ${c} 6)
+    DNSChooseOptions=(Google "" on
+            OpenDNS "" off
+            Level3 "" off
+            DNS.WATCH "" off
+            Norton "" off
+            Custom "" off)
+
+    if DNSchoices=$("${DNSChoseCmd[@]}" "${DNSChooseOptions[@]}" 2>&1 >/dev/tty)
+    then
+        case ${DNSchoices} in
+        Google)
+            echo "::: Using Google DNS servers."
+            OVPNDNS1="8.8.8.8"
+            OVPNDNS2="8.8.4.4"
+            # These are already in the file
+            ;;
+        OpenDNS)
+            echo "::: Using OpenDNS servers."
+            OVPNDNS1="208.67.222.222"
+            OVPNDNS2="208.67.220.220"
+            $SUDO sed -i '0,/\(dhcp-option DNS \)/ s/\(dhcp-option DNS \).*/\1'${OVPNDNS1}'\"/' /etc/openvpn/server.conf
+            $SUDO sed -i '0,/\(dhcp-option DNS \)/! s/\(dhcp-option DNS \).*/\1'${OVPNDNS2}'\"/' /etc/openvpn/server.conf
+            ;;
+        Level3)
+            echo "::: Using Level3 servers."
+            OVPNDNS1="209.244.0.3"
+            OVPNDNS2="209.244.0.4"
+            $SUDO sed -i '0,/\(dhcp-option DNS \)/ s/\(dhcp-option DNS \).*/\1'${OVPNDNS1}'\"/' /etc/openvpn/server.conf
+            $SUDO sed -i '0,/\(dhcp-option DNS \)/! s/\(dhcp-option DNS \).*/\1'${OVPNDNS2}'\"/' /etc/openvpn/server.conf
+            ;;
+        DNS.WATCH)
+            echo "::: Using DNS.WATCH servers."
+            OVPNDNS1="84.200.69.80"
+            OVPNDNS2="84.200.70.40"
+            $SUDO sed -i '0,/\(dhcp-option DNS \)/ s/\(dhcp-option DNS \).*/\1'${OVPNDNS1}'\"/' /etc/openvpn/server.conf
+            $SUDO sed -i '0,/\(dhcp-option DNS \)/! s/\(dhcp-option DNS \).*/\1'${OVPNDNS2}'\"/' /etc/openvpn/server.conf
+            ;;
+        Norton)
+            echo "::: Using Norton ConnectSafe servers."
+            OVPNDNS1="199.85.126.10"
+            OVPNDNS2="199.85.127.10"
+            $SUDO sed -i '0,/\(dhcp-option DNS \)/ s/\(dhcp-option DNS \).*/\1'${OVPNDNS1}'\"/' /etc/openvpn/server.conf
+            $SUDO sed -i '0,/\(dhcp-option DNS \)/! s/\(dhcp-option DNS \).*/\1'${OVPNDNS2}'\"/' /etc/openvpn/server.conf
+            ;;
+        Custom)
+            until [[ $DNSSettingsCorrect = True ]]
+            do
+                strInvalid="Invalid"
+
+                if OVPNDNS=$(whiptail --backtitle "Specify Upstream DNS Provider(s)"  --inputbox "Enter your desired upstream DNS provider(s), seperated by a comma.\n\nFor example '8.8.8.8, 8.8.4.4'" ${r} ${c} "" 3>&1 1>&2 2>&3)
+                then
+                    OVPNDNS1=$(echo "$OVPNDNS" | sed 's/[, \t]\+/,/g' | awk -F, '{print$1}')
+                    OVPNDNS2=$(echo "$OVPNDNS" | sed 's/[, \t]\+/,/g' | awk -F, '{print$2}')
+                    if ! valid_ip "$OVPNDNS1" || [ ! "$OVPNDNS1" ]; then
+                        OVPNDNS1=$strInvalid
+                    fi
+                    if ! valid_ip "$OVPNDNS2" && [ "$OVPNDNS2" ]; then
+                        OVPNDNS2=$strInvalid
+                    fi
+                else
+                    echo "::: Cancel selected, exiting...."
+                    exit 1
+                fi
+                if [[ $OVPNDNS1 == "$strInvalid" ]] || [[ $OVPNDNS2 == "$strInvalid" ]]; then
+                    whiptail --msgbox --backtitle "Invalid IP" --title "Invalid IP" "One or both entered IP addresses were invalid. Please try again.\n\n    DNS Server 1:   $OVPNDNS1\n    DNS Server 2:   $OVPNDNS2" ${r} ${c}
+                    if [[ $OVPNDNS1 == "$strInvalid" ]]; then
+                        OVPNDNS1=""
+                    fi
+                    if [[ $OVPNDNS2 == "$strInvalid" ]]; then
+                        OVPNDNS2=""
+                    fi
+                    DNSSettingsCorrect=False
+                else
+                    if (whiptail --backtitle "Specify Upstream DNS Provider(s)" --title "Upstream DNS Provider(s)" --yesno "Are these settings correct?\n    DNS Server 1:   $OVPNDNS1\n    DNS Server 2:   $OVPNDNS2" ${r} ${c}) then
+                        DNSSettingsCorrect=True
+                        $SUDO sed -i '0,/\(dhcp-option DNS \)/ s/\(dhcp-option DNS \).*/\1'${OVPNDNS1}'\"/' /etc/openvpn/server.conf
+                        if [ -z ${OVPNDNS2} ]; then
+                            $SUDO sed -i '/\(dhcp-option DNS \)/{n;N;d}' /etc/openvpn/server.conf
+                        else
+                            $SUDO sed -i '0,/\(dhcp-option DNS \)/! s/\(dhcp-option DNS \).*/\1'${OVPNDNS2}'\"/' /etc/openvpn/server.conf
+                        fi
+                    else
+                        # If the settings are wrong, the loop continues
+                        DNSSettingsCorrect=False
+                    fi
+                fi
+        done
+        ;;
+    esac
+    else
+        echo "::: Cancel selected. Exiting..."
+        exit 1
+    fi
+}
 
 # View Apache logs
 apachelog() {
@@ -815,7 +797,549 @@ function trashempty() {
 		echo -e "${BRIGHT_RED}Operation cancelled.${RESET}"
 	fi
 }
+# Confirm/Ask a question - See 'killps' for example of use
+# General-purpose function to ask Yes/No questions in Bash,
+# either with or without a default answer.
+# It keeps repeating the question until it gets a valid answer.
+# Link: https://gist.github.com/davejamesmiller/1965569
+# Example Usage:
+#   if ask "Do you want to do such-and-such?"; then
+# Default to Yes if the user presses enter without giving an answer:
+#   if ask "Do you want to do such-and-such?" Y; then
+# Default to No if the user presses enter without giving an answer:
+#   if ask "Do you want to do such-and-such?" N; then
+# Or if you prefer the shorter version:
+#   ask "Do you want to do such-and-such?" && said_yes
+#   ask "Do you want to do such-and-such?" || said_no
+function ask() {
+	# Initialize local variables
+	local prompt default reply
 
+	# Determine the prompt and default based on the second parameter
+	if [[ ${2:-} = 'Y' ]]; then
+		prompt='Y/n'
+		default='Y'
+	elif [[ ${2:-} = 'N' ]]; then
+		prompt='y/N'
+		default='N'
+	else
+		prompt='y/n'
+		default=''
+	fi
+
+	# Loop until a valid answer is given
+	while true; do
+		# Ask the question (not using "read -p" as it uses stderr not stdout)
+		echo -ne "$1 [$prompt] "
+
+		# Read the answer (use /dev/tty in case stdin is redirected from somewhere else)
+		read -r reply </dev/tty
+
+		# Set reply to default if it is empty
+		[[ -z $reply ]] && reply=$default
+
+		# Check if the reply is valid
+		case "$reply" in
+			Y*|y*) return 0 ;;
+			N*|n*) return 1 ;;
+		esac
+	done
+}
+
+# Creates a menu for selecting an item from a list from either piped in
+# multi-line text or command line arguments. Use --picker=app to force a picker
+# Example: ls -1 ~ | createmenu
+# Example: echo -e "Jen\nTom\nJoe Bob\nAmy\nPat" | sort | createmenu
+# Example: cat "menuitems.txt" | createmenu
+# Example: _TMUX_SESSION="$(tmux ls -F "#{session_name}" 2> /dev/null | createmenu)"
+# Example: createmenu 'Option 1' 'Option 2' 'Option 3'
+function createmenu() {
+	# Valid pickers to detect and automatically used in order
+	local _VALID_PICKERS="${_PREFERRED_PICKER} fzy sk fzf peco percol pick icepick selecta sentaku zf dmenu rofi wofi"
+
+	# Check if command line arguments are provided and if input is piped in
+	if [ "$#" -eq 0 ] && [ -t 0 ]; then
+		echo -e "${BRIGHT_WHITE}createmenu:${RESET} Creates a menu for selecting an item from a list"
+		echo -e "${BRIGHT_WHITE}It takes input from either piped in multi-line text or command line arguments${RESET}"
+		echo -e "${BRIGHT_WHITE}Supported optional pickers are:${RESET}"
+		echo -e "  ${BRIGHT_GREEN}fzy, sk (skim), fzf, peco, percol, pick, icepick, selecta, sentaku, zf, dmenu, rofi, wofi${RESET}"
+		echo -e "${BRIGHT_WHITE}Usage examples:${RESET}"
+		echo -e "  With piped input:"
+		echo -e "    ${BRIGHT_YELLOW}ls${BRIGHT_CYAN} -1 ~ | ${BRIGHT_MAGENTA}createmenu${RESET}"
+		echo -e "    ${BRIGHT_CYAN}echo -e ${BRIGHT_YELLOW}\"Jen\\\\nTom\\\\nJoe Bob\\\\nAmy\\\\nPat\"${BRIGHT_CYAN} | sort | ${BRIGHT_MAGENTA}createmenu${RESET}"
+		echo -e "    ${BRIGHT_CYAN}cat ${BRIGHT_YELLOW}'menuitems.txt'${BRIGHT_CYAN} | ${BRIGHT_MAGENTA}createmenu${RESET}"
+		echo -e "    ${BRIGHT_CYAN}_TMUX_SESSION=\"\$(${BRIGHT_YELLOW}tmux ls -F '#{session_name}' 2> /dev/null${BRIGHT_CYAN} | ${BRIGHT_MAGENTA}createmenu${BRIGHT_CYAN})\"${RESET}"
+		echo -e "  With command line arguments:"
+		echo -e "    ${BRIGHT_MAGENTA}createmenu ${BRIGHT_YELLOW}'Option 1' 'Option 2' 'Option 3'${RESET}"
+		echo -e "  With a specified picker:"
+		echo -e "    ${BRIGHT_MAGENTA}createmenu ${BRIGHT_CYAN}--picker=${BRIGHT_GREEN}rofi ${BRIGHT_YELLOW}\"Option 1\" \"Option 2\" \"Option 3\"${RESET}"
+		echo -e "    ${BRIGHT_CYAN}echo -e ${BRIGHT_YELLOW}\"Red\\\\nGreen\\\\nBlue\"${BRIGHT_CYAN} | ${BRIGHT_MAGENTA}createmenu${BRIGHT_CYAN} --picker=${BRIGHT_GREEN}dmenu${RESET}"
+		return 1
+	fi
+
+	# Check for --picker parameter and remove it from arguments
+	local _PICKER
+	local _FOUND_PICKER=false
+	local NEW_ARGS=()
+	for ARG in "$@"; do
+		if [[ "$ARG" == --picker=* ]]; then
+			_PICKER="${ARG#*=}"
+			if cmd-exists "${_PICKER}"; then
+				_FOUND_PICKER=true
+			else
+				echo -e "${BRIGHT_RED}Error: ${BRIGHT_CYAN}The picker ${BRIGHT_YELLOW}${_PICKER}${BRIGHT_CYAN} is not available or installed${RESET}"
+				return 1
+			fi
+		else
+			NEW_ARGS+=("$ARG")
+		fi
+	done
+	set -- "${NEW_ARGS[@]}"
+
+	# If no specific picker is provided or the picker is not valid...
+	if [ "$_FOUND_PICKER" == false ]; then
+		# Loop through the list and see if one of them is installed
+		for _PICKER in $_VALID_PICKERS; do
+			if cmd-exists $_PICKER; then
+				_FOUND_PICKER=true
+				break
+			fi
+		done
+	fi
+
+	# Check if command line arguments are provided
+	if [ "$#" -gt 0 ]; then
+		local _INPUT=""
+		local _COUNT=0
+		for arg in "$@"; do
+			# Increase count for each argument
+			((_COUNT++))
+
+			# Add newline after each argument except the last
+			if [ $_COUNT -lt $# ]; then
+				_INPUT+="${arg}"$'\n'
+			else
+				_INPUT+="${arg}"
+			fi
+		done
+	else
+		# Get the piped in multiple lines of text
+		local _INPUT="$(</dev/stdin)"
+		# Count the lines of text
+		local _COUNT=$(echo "${_INPUT}" | wc -l)
+	fi
+
+	# If there is no input, just exit with an error
+	if [ -z "${_INPUT}" ]; then
+		return 1
+
+	# If there is only one line (or one argument), no choice is needed
+	elif [ ${_COUNT} -eq 1 ]; then
+		echo "${_INPUT}"
+		return 0
+	fi
+
+	# If we found a picker, use it
+	if [ "$_FOUND_PICKER" == true ]; then
+		# echo -e "${BRIGHT_MAGENTA}The picker is: ${BRIGHT_GREEN}$_PICKER${RESET}"
+		case $_PICKER in
+			dmenu)
+				echo "${_INPUT}" | dmenu -l 10
+				;;
+			rofi)
+				echo "${_INPUT}" | rofi -dmenu -i -no-custom -no-fixed-num-lines -p "Choose:"
+				;;
+			wofi)
+				echo "${_INPUT}" | wofi --show dmenu --insensitive --prompt "Choose:"
+				;;
+			*)
+				echo "${_INPUT}" | $_PICKER
+				;;
+		esac
+
+	# Use Bash's built in select option
+	else
+		# Parse only on new lines
+		local _IFS_OLD="${IFS}"
+		IFS=$'\n'
+
+		# Turn off globbing filename generation
+		set -f
+
+		# Show a list to pick an item from
+		select RESULT in ${_INPUT}; do
+			if [ -n "${RESULT}" ]; then
+				echo "${RESULT}"
+				break
+			fi
+		done < /dev/tty
+
+		# Restore settings
+		IFS="${_IFS_OLD}"
+		set +f
+	fi
+}
+# This function automates the process of executing a command and providing visual feedback
+# It displays an hourglass symbol next to the provided description while the command is running
+# Upon successful execution, the hourglass is replaced with a green checkmark
+# If the command fails, a red cross symbol is displayed instead
+# Parameters:
+# 	$1: Text description to display while the command is running
+# 	$2: The command to execute
+function run-with-feedback() {
+	# Check if both parameters are provided
+	if [ -z "${1}" ] || [ -z "${2}" ]; then
+		echo -e "${BRIGHT_WHITE}Usage: ${BRIGHT_CYAN}run-with-feedback${RESET} ${BRIGHT_GREEN}[description] [command]${RESET}"
+		return 1
+	fi
+
+	# Local variables for special characters with color codes
+	local hourglass="${BRIGHT_YELLOW}⌛${RESET}"   # Yellow Hourglass
+	local checkmark="\r${BRIGHT_GREEN}✓${RESET}"  # Green Checkmark
+	local cross="\r${BRIGHT_RED}X${RESET}"      # Red Error Cross
+
+	# Display the hourglass and message
+	echo -ne "${hourglass} ${1}"
+
+	# Execute the command
+	if eval "${2}"; then
+		# If successful, display a green checkmark
+		echo -e "${checkmark} ${1} "
+	else
+		# If failed, display a red cross
+		echo -e "${cross} ${1} "
+	fi
+}
+# Fixes permissions in a user's home folder
+# If no user is specified, the current user is selected
+function fixuserhome() {
+	# Validate input parameters
+	if [[ -z "${@}" ]]; then
+		local _username="$(whoami)"
+	else
+		local _username="${@}"
+	fi
+
+	# Verify if the home folder exists
+	if [ ! -d "/home/${_username}" ]; then
+		echo "Error: User ${_username} does not have a home folder."
+		return 1
+	fi
+
+	# Confirm with the user
+	if ask "${BRIGHT_RED}WARNING:${RESET} Change all permissions for user ${BRIGHT_CYAN}${_username}${RESET}'s home folder?" N; then
+		# Elevate privileges to root
+		sudo true
+
+		if ask "Reset group ownership permissions to ${BRIGHT_CYAN}${_username}${RESET}?" Y; then
+			run-with-feedback \
+				"Set the owner and group as ${_username}" \
+				"sudo chown -R ${_username}:${_username} /home/${_username}"
+		else
+			run-with-feedback \
+				"Set the owner and group as ${_username}" \
+				"sudo chown -R ${_username} /home/${_username}"
+		fi
+
+		run-with-feedback \
+			"Make sure we have read and write access" \
+			"chmod -R u+rw /home/${_username}"
+
+		run-with-feedback \
+			"Remove write access from group" \
+			"chmod -R g-w /home/${_username}"
+
+		run-with-feedback \
+			"Remove all access from others" \
+			"chmod -R o-rwx /home/${_username}"
+
+		run-with-feedback \
+			"Make .sh shell script files executable" \
+			"find /home/${_username} -type f \( -name \"*.sh\" -o -name \".*.sh\" \) -exec chmod ug+x {} \;"
+
+		run-with-feedback \
+			"Make sure all directories have execute permissions" \
+			"chmod -R ug+X /home/${_username}"
+
+		# Remove group permissions for directories without group read
+		run-with-feedback \
+			"Remove group permissions for directories without group read" \
+			"find /home/${_username} -type d ! -perm -g+r -execdir chmod g-wx {} \;"
+
+		if [[ -d "/home/${_username}/.local/share/kwalletd" ]]; then
+			run-with-feedback \
+				"User only access to KDE Wallet keyring" \
+				"chmod -R go-rwx /home/${_username}/.local/share/kwalletd"
+		fi
+
+		# If there is a ~/.local/share/keyrings directory...
+		if [[ -d "/home/${_username}/.local/share/keyrings" ]]; then
+			run-with-feedback \
+				"User only access to GNOME keyring" \
+				"chmod -R go-rwx /home/${_username}/.local/share/keyrings"
+		fi
+
+		# If there is an .ssh directory...
+		if [[ -d "/home/${_username}/.ssh" ]]; then
+			# Setting ownership for .ssh directory and files
+			run-with-feedback \
+				"Setting ownership for .ssh directory and files" \
+				"chown -R ${_username}:${_username} /home/${_username}/.ssh"
+
+			# Setting strict permissions for .ssh and private keys
+			run-with-feedback \
+				"User only access to .ssh and private keys" \
+				"chmod -R go-rwx /home/${_username}/.ssh"
+		fi
+
+		# If there is a .putty directory...
+		if [[ -d "/home/${_username}/.putty" ]]; then
+			run-with-feedback \
+				"User only access to .putty and ssh keys" \
+				"chmod -R go-rwx /home/${_username}/.putty"
+		fi
+
+		# If there is a .pki directory...
+		if [[ -d "/home/${_username}/.pki" ]]; then
+			run-with-feedback \
+				"User only access to .pki keys and certificates" \
+				"chmod -R go-rwx /home/${_username}/.pki"
+		fi
+
+		# If there is a .gnupg directory...
+		if [[ -d "/home/${_username}/.gnupg" ]]; then
+			run-with-feedback \
+				"User only access to .gnupg and private keys" \
+				"chmod -R go-rwx /home/${_username}/.gnupg"
+		fi
+
+		# If KeePassXC/KeePass/KeeWeb is installed...
+		if cmd-exists --strict keepassxc || cmd-exists --strict keepass || cmd-exists --strict keeweb; then
+			run-with-feedback \
+				"User only access to KeePassXC/KeePass/KeeWeb .kdbx files" \
+				"find /home/${_username} -type f \( -name '*.kdbx' -o -name '.*.kdbx' \) -exec chmod go-rwx {} \;"
+		fi
+
+		# If there is a pass directory...
+		if [[ -d "/home/${_username}/.password-store" ]]; then
+			run-with-feedback \
+				"User only access to pass data" \
+				"chmod -R go-rwx /home/${_username}/.password-store"
+		fi
+
+		# If there is a Bitwarden directory...
+		if [[ -d "/home/${_username}/.config/Bitwarden" ]]; then
+			run-with-feedback \
+				"User only access to Bitwarden data" \
+				"chmod -R go-rwx /home/${_username}/.config/Bitwarden"
+		fi
+		if [[ -d "/home/${_username}/.var/app/com.bitwarden.desktop" ]]; then
+			run-with-feedback \
+				"User only access to Bitwarden data (Flatpak)" \
+				"chmod -R go-rwx /home/${_username}/.var/app/com.bitwarden.desktop"
+		fi
+
+		# Check for Tor settings
+		if [[ -d "/home/${_username}/.local/share/torbrowser" ]]; then
+			run-with-feedback \
+				"User only access to Tor browser data" \
+				"chmod -R go-rwx /home/${_username}/.local/share/torbrowser"
+		fi
+		if [[ -d "/home/${_username}/.var/app/com.github.micahflee.torbrowser-launcher" ]]; then
+			run-with-feedback \
+				"User only access to Tor browser data (Flatpak)" \
+				"chmod -R go-rwx /home/${_username}/.var/app/com.github.micahflee.torbrowser-launcher"
+		fi
+
+		# Check for Brave settings
+		if [[ -d "/home/${_username}/.config/BraveSoftware" ]]; then
+			run-with-feedback \
+				"User only access to Brave browser data" \
+				"chmod -R go-rwx /home/${_username}/.config/BraveSoftware"
+		fi
+		if [[ -d "/home/${_username}/.var/app/com.brave.Browser" ]]; then
+			run-with-feedback \
+				"User only access to Brave browser data (Flatpak)" \
+				"chmod -R go-rwx /home/${_username}/.var/app/com.brave.Browser"
+		fi
+
+		# Check for Chrome settings
+		if [[ -d "/home/${_username}/.config/google-chrome" ]]; then
+			run-with-feedback \
+				"User only access to Chrome browser data" \
+				"chmod -R go-rwx /home/${_username}/.config/google-chrome"
+		fi
+		if [[ -d "/home/${_username}/.var/app/com.google.Chrome" ]]; then
+			run-with-feedback \
+				"User only access to Chrome browser data (Flatpak)" \
+				"chmod -R go-rwx /home/${_username}/.var/app/com.google.Chrome"
+		fi
+
+		# Check for Chromium settings
+		if [[ -d "/home/${_username}/.config/chromium" ]]; then
+			run-with-feedback \
+				"User only access to Chromium browser data" \
+				"chmod -R go-rwx /home/${_username}/.config/chromium"
+		fi
+		if [[ -d "/home/${_username}/.var/app/org.chromium.Chromium" ]]; then
+			run-with-feedback \
+				"User only access to Chromium browser data (Flatpak)" \
+				"chmod -R go-rwx /home/${_username}/.var/app/org.chromium.Chromium"
+		fi
+		if [[ -d "/home/${_username}/.var/app/net.sourceforge.chromium-bsu" ]]; then
+			run-with-feedback \
+				"User only access to Ungoogled Chromium browser data (Flatpak)" \
+				"chmod -R go-rwx /home/${_username}/.var/app/net.sourceforge.chromium-bsu"
+		fi
+
+		# Check for Firefox settings
+		if [[ -d "/home/${_username}/.mozilla" ]]; then
+			run-with-feedback \
+				"User only access to Firefox browser data" \
+				"chmod -R go-rwx /home/${_username}/.mozilla"
+		fi
+		if [[ -d "/home/${_username}/.var/app/org.mozilla.firefox" ]]; then
+			run-with-feedback \
+				"User only access to Firefox browser data (Flatpak)" \
+				"chmod -R go-rwx /home/${_username}/.var/app/org.mozilla.firefox"
+		fi
+
+		# Check for LibreWolf settings
+		if [[ -d "/home/${_username}/.librewolf" ]]; then
+			run-with-feedback \
+				"User only access to LibreWolf browser data" \
+				"chmod -R go-rwx /home/${_username}/.librewolf"
+		fi
+		if [[ -d "/home/${_username}/.var/app/io.gitlab.librewolf-community" ]]; then
+			run-with-feedback \
+				"User only access to LibreWolf browser data (Flatpak)" \
+				"chmod -R go-rwx /home/${_username}/.var/app/io.gitlab.librewolf-community"
+		fi
+
+		# Check for Opera settings
+		if [[ -d "/home/${_username}/.config/opera" ]]; then
+			run-with-feedback \
+				"User only access to Opera browser data" \
+				"chmod -R go-rwx /home/${_username}/.config/opera"
+		fi
+
+		# Check for Vivaldi settings
+		if [[ -d "/home/${_username}/.config/vivaldi" ]]; then
+			run-with-feedback \
+				"User only access to Vivaldi browser data" \
+				"chmod -R go-rwx /home/${_username}/.config/vivaldi"
+		fi
+
+		# Check for Evolution settings
+		if [[ -d "/home/${_username}/.config/evolution" ]]; then
+			run-with-feedback \
+				"User only access to Evolution email data" \
+				"chmod -R go-rwx /home/${_username}/.config/evolution"
+		fi
+		if [[ -d "/home/${_username}/.var/app/org.gnome.Evolution" ]]; then
+			run-with-feedback \
+				"User only access to Evolution email data (Flatpak)" \
+				"chmod -R go-rwx /home/${_username}/.var/app/org.gnome.Evolution"
+		fi
+
+		# Check for Geary settings
+		if [[ -d "/home/${_username}/.local/share/geary" ]]; then
+			run-with-feedback \
+				"User only access to Geary email data" \
+				"chmod -R go-rwx /home/${_username}/.local/share/geary"
+		fi
+		if [[ -d "/home/${_username}/.var/app/org.gnome.Geary" ]]; then
+			run-with-feedback \
+				"User only access to Geary email data (Flatpak)" \
+				"chmod -R go-rwx /home/${_username}/.var/app/org.gnome.Geary"
+		fi
+
+		# Check for Thunderbird settings
+		if [[ -d "/home/${_username}/.thunderbird" ]]; then
+			run-with-feedback \
+				"User only access to Thunderbird email data" \
+				"chmod -R go-rwx /home/${_username}/.thunderbird"
+		fi
+		if [[ -d "/home/${_username}/.var/app/org.mozilla.Thunderbird" ]]; then
+			run-with-feedback \
+				"User only access to Thunderbird email data (Flatpak)" \
+				"chmod -R go-rwx /home/${_username}/.var/app/org.mozilla.Thunderbird"
+		fi
+
+		# Check for Element settings
+		if [[ -d "/home/${_username}/.config/Element" ]]; then
+			run-with-feedback \
+				"User only access to Element chat data" \
+				"chmod -R go-rwx /home/${_username}/.config/Element"
+		fi
+		if [[ -d "/home/${_username}/.var/app/im.riot.Riot" ]]; then
+			run-with-feedback \
+				"User only access to Element chat data (Flatpak)" \
+				"chmod -R go-rwx /home/${_username}/.var/app/im.riot.Riot"
+		fi
+
+		# Check for Signal settings
+		if [[ -d "/home/${_username}/.config/Signal" ]]; then
+			run-with-feedback \
+				"User only access to Signal chat data" \
+				"chmod -R go-rwx /home/${_username}/.config/Signal"
+		fi
+		if [[ -d "/home/${_username}/.var/app/org.signal.Signal" ]]; then
+			run-with-feedback \
+				"User only access to Signal chat data (Flatpak)" \
+				"chmod -R go-rwx /home/${_username}/.var/app/org.signal.Signal"
+		fi
+
+		if [[ -f "/home/${_username}/.config/birthdays.csv" ]]; then
+			run-with-feedback \
+				"User only access to birthday/anniversary reminder data" \
+				"chmod 600 /home/${_username}/.config/birthdays.csv"
+		elif [[ -f "${_BDAY_FILE}" ]]; then
+			run-with-feedback \
+				"User only access to birthday/anniversary reminder data (from variable)" \
+				"chmod 600 \"${_BDAY_FILE}\""
+		fi
+
+		# [OPTIONAL] Copy group permissions to other
+		#run-with-feedback \
+		#	"Copy group permissions to other" \
+		#	"chmod -R o=g /home/${_username}"
+
+		# [OPTIONAL] Copy user permissions to group
+		#run-with-feedback \
+		#	"Copy user permissions to group" \
+		#	"chmod -R g=u /home/${_username}"
+
+		# Set the setgid bit, so that files/folder under the directory
+		# will be created with the same group as <directory>
+		run-with-feedback \
+			"Set the setgid bit to inherit folder permissions" \
+			"chmod g+s /home/${_username}"
+
+		# If Access Control Lists (ACL) is installed...
+		# To "activate" ACL, you have to remount the drive with the "acl" option
+		# NOTE: Btrfs and Xfs filesystem use the ACL mount option by default
+		# Example /etc/fstab Entry:
+		# UUID=abc123def456 / ext4 defaults,acl 0 1
+		# Type "man acl" for more information
+		if cmd-exists --strict setfacl; then
+			# Use getfacl [directory] to check ACL for these directories
+			run-with-feedback \
+				"Set user default ACL entries" \
+				"setfacl -d -m u::rwx /home/${_username}"
+			run-with-feedback \
+				"Set group default ACL entries" \
+				"setfacl -d -m g::rx /home/${_username}"
+			run-with-feedback \
+				"Set others default ACL entries" \
+				"setfacl -d -m o::X /home/${_username}"
+		fi
+
+		echo "Done!"
+	else
+		return 0
+	fi
+}
 # Restore the trash only is trash-cli is installed
 # trash-cli - Command Line Interface to FreeDesktop.org Trash
 # Link: https://github.com/andreafrancia/trash-cli
@@ -891,8 +1415,74 @@ function createuser() {
 		sudo su - "${username}"
 	fi
 }
+# Interactively create, configure, and test a new Linux user
+function createuser() {
+	sudo true
+	local username
 
-# Remove a user from the system
+	# Check if a username was passed as a parameter
+	if [ "$#" -eq 1 ]; then
+		username="$1"
+	else
+		read -r -p $'${BRIGHT_CYAN}Enter the username for the new user:${RESET} ' username
+	fi
+
+	# Check if the user already exists
+	if id "${username}" &>/dev/null; then
+		echo -e "${BRIGHT_RED}User ${username} already exists. Aborting.${RESET}"
+		return 1
+	fi
+
+	# Confirm if the user should be created with a home directory
+	if ask "${BRIGHT_GREEN}Create a new user with a home folder?${RESET}" N; then
+		sudo useradd -m "${username}"
+	else
+		echo -e "${BRIGHT_RED}User creation aborted.${RESET}"
+		return 1
+	fi
+
+	# Set the user's password
+	echo -e "${BRIGHT_YELLOW}\nSet the user's password:${RESET}"
+	sudo passwd "${username}"
+
+	# Ask if the user should change their password upon next login
+	if ask "${BRIGHT_GREEN}Force user to change password on next login?${RESET}" N; then
+		sudo passwd -e "${username}"
+	else
+		echo -e "${BRIGHT_YELLOW}No change password enforced.${RESET}"
+	fi
+
+	# Ask if the user should have root (sudo) access
+	if ask "${BRIGHT_MAGENTA}⚠️ Give user root access? ⚠️${RESET}" N; then
+		sudo usermod -a -G sudo "${username}"
+	else
+		echo -e "${BRIGHT_YELLOW}No root access granted.${RESET}"
+	fi
+
+	# Change the user's login shell to bash
+	echo -e "${BRIGHT_CYAN}\nChange user’s login shell to bash${RESET}"
+	sudo usermod --shell /bin/bash "${username}"
+
+	# Verify the user's settings
+	echo -e "${BRIGHT_YELLOW}\nVerifying user settings:${RESET}"
+	sudo grep "${username}" /etc/passwd
+
+	# Ask if you should copy over the local .bashrc to the new user
+	if ask "${BRIGHT_GREEN}Copy over your local .bashrc?${RESET}" N; then
+		sudo cp ~/.bashrc /home/"${username}"/
+		sudo chown "${username}":"${username}" /home/"${username}"/.bashrc
+		sudo chmod 644 /home/"${username}"/.bashrc
+	else
+		echo -e "${BRIGHT_YELLOW}No .bashrc copy.${RESET}"
+	fi
+
+	# Test login with the new user
+	if ask "${BRIGHT_GREEN}⚠️ Test a login as this user? ⚠️${RESET}" N; then
+		echo -e "${BRIGHT_CYAN}\nTesting: Logging in as ${username}${RESET}"
+		sudo su - "${username}"
+	fi
+}
+#Remove a user from the system
 alias deleteuser='sudo userdel'
 function wipeuser() {
 	local username="$1"
@@ -938,7 +1528,6 @@ function wipeuser() {
 	fi
 }
 
-
 #######################################################
 # Set the ultimate amazing command prompt
 #######################################################
@@ -951,4 +1540,3 @@ export PATH=$PATH:"$HOME/.local/bin:$HOME/.cargo/bin:/var/lib/flatpak/exports/bi
 # Install Starship - curl -sS https://starship.rs/install.sh | sh
 eval "$(starship init bash)"
 eval "$(zoxide init bash)"
-f

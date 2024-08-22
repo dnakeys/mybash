@@ -1,117 +1,177 @@
-#!/bin/bash
-######## FIRST CHECK ########
-# Must be root to install
-echo ":::"
-if [[ $EUID -eq 0 ]];then
-    echo "::: You are root."
-else
-    echo "::: sudo will be used for the install."
-    # Check if it is actually installed
-    # If it isn't, exit because the install cannot complete
-    if [[ $(dpkg-query -s sudo) ]];then
-        export SUDO="sudo"
-        export SUDOE="sudo -E"
-    else
-        echo "::: Please install sudo or run this as root."
-        exit 1
-    fi
+#!/bin/sh -e
+
+RC='\033[0m'
+RED='\033[31m'
+YELLOW='\033[33m'
+GREEN='\033[32m'
+
+# Check if the home directory and linuxtoolbox folder exist, create them if they don't
+LINUXTOOLBOXDIR="$HOME/linuxtoolbox"
+
+if [ ! -d "$LINUXTOOLBOXDIR" ]; then
+    echo "${YELLOW}Creating linuxtoolbox directory: $LINUXTOOLBOXDIR${RC}"
+    mkdir -p "$LINUXTOOLBOXDIR"
+    echo "${GREEN}linuxtoolbox directory created: $LINUXTOOLBOXDIR${RC}"
 fi
 
-RC='\e[0m'
-RED='\e[31m'
-YELLOW='\e[33m'
-GREEN='\e[32m'
+if [ -d "$LINUXTOOLBOXDIR/mybash" ]; then rm -rf "$LINUXTOOLBOXDIR/mybash"; fi
+
+echo "${YELLOW}Cloning mybash repository into: $LINUXTOOLBOXDIR/mybash${RC}"
+git clone https://github.com/ChrisTitusTech/mybash "$LINUXTOOLBOXDIR/mybash"
+if [ $? -eq 0 ]; then
+    echo "${GREEN}Successfully cloned mybash repository${RC}"
+else
+    echo "${RED}Failed to clone mybash repository${RC}"
+    exit 1
+fi
+
+# add variables to top level so can easily be accessed by all functions
+PACKAGER=""
+SUDO_CMD=""
+SUGROUP=""
+GITPATH=""
+
+cd "$LINUXTOOLBOXDIR/mybash" || exit
 
 command_exists() {
-    command -v $1 >/dev/null 2>&1
+    command -v "$1" >/dev/null 2>&1
 }
 
 checkEnv() {
     ## Check for requirements.
     REQUIREMENTS='curl groups sudo'
-    if ! command_exists ${REQUIREMENTS}; then
-        echo -e "${RED}To run me, you need: ${REQUIREMENTS}${RC}"
-        exit 1
-    fi
-
-    ## Check Package Handeler
-    PACKAGEMANAGER='apt yum dnf pacman zypper'
-    for pgm in ${PACKAGEMANAGER}; do
-        if command_exists ${pgm}; then
-            PACKAGER=${pgm}
-            echo -e "Using ${pgm}"
+    for req in $REQUIREMENTS; do
+        if ! command_exists "$req"; then
+            echo "${RED}To run me, you need: $REQUIREMENTS${RC}"
+            exit 1
         fi
     done
 
-    if [ -z "${PACKAGER}" ]; then
-        echo -e "${RED}Can't find a supported package manager"
+    ## Check Package Handler
+    PACKAGEMANAGER='nala apt dnf yum pacman zypper emerge xbps-install nix-env'
+    for pgm in $PACKAGEMANAGER; do
+        if command_exists "$pgm"; then
+            PACKAGER="$pgm"
+            echo "Using $pgm"
+            break
+        fi
+    done
+
+    if [ -z "$PACKAGER" ]; then
+        echo "${RED}Can't find a supported package manager${RC}"
         exit 1
     fi
 
+    if command_exists sudo; then
+        SUDO_CMD="sudo"
+    elif command_exists doas && [ -f "/etc/doas.conf" ]; then
+        SUDO_CMD="doas"
+    else
+        SUDO_CMD="su -c"
+    fi
+
+    echo "Using $SUDO_CMD as privilege escalation software"
+
     ## Check if the current directory is writable.
-    GITPATH="$(dirname "$(realpath "$0")")"
-    if [[ ! -w ${GITPATH} ]]; then
-        echo -e "${RED}Can't write to ${GITPATH}${RC}"
+    GITPATH=$(dirname "$(realpath "$0")")
+    if [ ! -w "$GITPATH" ]; then
+        echo "${RED}Can't write to $GITPATH${RC}"
         exit 1
     fi
 
     ## Check SuperUser Group
+
     SUPERUSERGROUP='wheel sudo root'
-    for sug in ${SUPERUSERGROUP}; do
-        if groups | grep ${sug}; then
-            SUGROUP=${sug}
-            echo -e "Super user group ${SUGROUP}"
+    for sug in $SUPERUSERGROUP; do
+        if groups | grep -q "$sug"; then
+            SUGROUP="$sug"
+            echo "Super user group $SUGROUP"
+            break
         fi
     done
 
     ## Check if member of the sudo group.
-    if ! groups | grep ${SUGROUP} >/dev/null; then
-        echo -e "${RED}You need to be a member of the sudo group to run me!"
+    if ! groups | grep -q "$SUGROUP"; then
+        echo "${RED}You need to be a member of the sudo group to run me!${RC}"
         exit 1
     fi
-
-}
-nano_settings() {
-    # Step 1: Run the curl command to download and run the install script
-    curl https://raw.githubusercontent.com/scopatz/nanorc/master/install.sh | sh
-
-# Step 2: Append a line to ~/.nanorc to include the nanorc files
-#install_path="$HOME/.nano"  # Default install path
-    echo "include $install_path/*.nanorc" >> ~/.nanorc
-
-# Step 3: Add a # to the beginning of line 26 in the nanorc file
-    sed -i '26s/^/#/' "/home/dnakeys/.nano/nanorc.nanorc"
-
-# Step 4: Insert set linenumbers as the first line of ~/.nanorc
-    sed -i '1s/^/set linenumbers\n/' ~/.nanorc   
 }
 
 installDepend() {
     ## Check for dependencies.
-    DEPENDENCIES='autojump bash bash-completion tar neovim bat nano unzip'
-    echo -e "${YELLOW}Installing dependencies...${RC}"
-    if [[ $PACKAGER == "pacman" ]]; then
-        if ! command_exists yay; then
-            echo "Installing yay..."
-            sudo ${PACKAGER} --noconfirm -S base-devel
-            $(cd /opt && sudo git clone https://aur.archlinux.org/yay-git.git && sudo chown -R ${USER}:${USER} ./yay-git && cd yay-git && makepkg --noconfirm -si)
+    DEPENDENCIES='bash bash-completion tar bat tree multitail fastfetch wget unzip fontconfig tldr'
+    if ! command_exists nvim; then
+        DEPENDENCIES="${DEPENDENCIES} neovim"
+    fi
+
+    echo "${YELLOW}Installing dependencies...${RC}"
+    if [ "$PACKAGER" = "pacman" ]; then
+        if ! command_exists yay && ! command_exists paru; then
+            echo "Installing yay as AUR helper..."
+            ${SUDO_CMD} ${PACKAGER} --noconfirm -S base-devel
+            cd /opt && ${SUDO_CMD} git clone https://aur.archlinux.org/yay-git.git && ${SUDO_CMD} chown -R "${USER}:${USER}" ./yay-git
+            cd yay-git && makepkg --noconfirm -si
         else
-            echo "Command yay already installed"
+            echo "AUR helper already installed"
         fi
-        yay --noconfirm -S ${DEPENDENCIES}
+        if command_exists yay; then
+            AUR_HELPER="yay"
+        elif command_exists paru; then
+            AUR_HELPER="paru"
+        else
+            echo "No AUR helper found. Please install yay or paru."
+            exit 1
+        fi
+        ${AUR_HELPER} --noconfirm -S ${DEPENDENCIES}
+    elif [ "$PACKAGER" = "nala" ]; then
+        ${SUDO_CMD} ${PACKAGER} install -y ${DEPENDENCIES}
+    elif [ "$PACKAGER" = "emerge" ]; then
+        ${SUDO_CMD} ${PACKAGER} -v app-shells/bash app-shells/bash-completion app-arch/tar app-editors/neovim sys-apps/bat app-text/tree app-text/multitail app-misc/fastfetch
+    elif [ "$PACKAGER" = "xbps-install" ]; then
+        ${SUDO_CMD} ${PACKAGER} -v ${DEPENDENCIES}
+    elif [ "$PACKAGER" = "nix-env" ]; then
+        ${SUDO_CMD} ${PACKAGER} -iA nixos.bash nixos.bash-completion nixos.gnutar nixos.neovim nixos.bat nixos.tree nixos.multitail nixos.fastfetch  nixos.pkgs.starship
+    elif [ "$PACKAGER" = "dnf" ]; then
+        ${SUDO_CMD} ${PACKAGER} install -y ${DEPENDENCIES}
     else
-        sudo ${PACKAGER} install -yq ${DEPENDENCIES}
+        ${SUDO_CMD} ${PACKAGER} install -yq ${DEPENDENCIES}
+    fi
+
+    # Check to see if the MesloLGS Nerd Font is installed (Change this to whatever font you would like)
+    FONT_NAME="MesloLGS Nerd Font Mono"
+    if fc-list :family | grep -iq "$FONT_NAME"; then
+        echo "Font '$FONT_NAME' is installed."
+    else
+        echo "Installing font '$FONT_NAME'"
+        # Change this URL to correspond with the correct font
+        FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Meslo.zip"
+        FONT_DIR="$HOME/.local/share/fonts"
+        # check if the file is accessible
+        if wget -q --spider "$FONT_URL"; then
+            TEMP_DIR=$(mktemp -d)
+            wget -q --show-progress $FONT_URL -O "$TEMP_DIR"/"${FONT_NAME}".zip
+            unzip "$TEMP_DIR"/"${FONT_NAME}".zip -d "$TEMP_DIR"
+            mkdir -p "$FONT_DIR"/"$FONT_NAME"
+            mv "${TEMP_DIR}"/*.ttf "$FONT_DIR"/"$FONT_NAME"
+            # Update the font cache
+            fc-cache -fv
+            # delete the files created from this
+            rm -rf "${TEMP_DIR}"
+            echo "'$FONT_NAME' installed successfully."
+        else
+            echo "Font '$FONT_NAME' not installed. Font URL is not accessible."
+        fi
     fi
 }
 
-installStarship() {
+installStarshipAndFzf() {
     if command_exists starship; then
         echo "Starship already installed"
         return
     fi
 
     if ! curl -sS https://starship.rs/install.sh | sh; then
-        echo -e "${RED}Something went wrong during starship install!${RC}"
+        echo "${RED}Something went wrong during starship install!${RC}"
         exit 1
     fi
     if command_exists fzf; then
@@ -129,79 +189,95 @@ installZoxide() {
     fi
 
     if ! curl -sS https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh; then
-        echo -e "${RED}Something went wrong during zoxide install!${RC}"; 
-     else 
-        sudo apt install zoxide;
+        echo "${RED}Something went wrong during zoxide install!${RC}"
         exit 1
     fi
 }
 
 install_additional_dependencies() {
-   sudo apt update
-   sudo apt install -y trash-cli bat meld jpico
-   sudo apt install -y nala
-   sudo nala install tldr
-   tldr -u
+#     # we have PACKAGER so just use it
+#     # for now just going to return early as we have already installed neovim in `installDepend`
+#     # so I am not sure why we are trying to install it again
+#     return
+#    case "$PACKAGER" in
+#         *apt)
+#             if [ ! -d "/opt/neovim" ]; then
+#                 curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim.appimage
+#                 chmod u+x nvim.appimage
+#                 ./nvim.appimage --appimage-extract
+#                 ${SUDO_CMD} mv squashfs-root /opt/neovim
+#                 ${SUDO_CMD} ln -s /opt/neovim/AppRun /usr/bin/nvim
+#             fi
+#             ;;
+#         *zypper)
+#             ${SUDO_CMD} zypper refresh
+#             ${SUDO_CMD} zypper -n install neovim # -y doesn't work on opensuse -n is short for -non-interactive which is equivalent to -y
+#             ;;
+#         *dnf)
+#             ${SUDO_CMD} dnf check-update
+#             ${SUDO_CMD} dnf install -y neovim
+#             ;;
+#         *pacman)
+#             ${SUDO_CMD} pacman -Syu
+#             ${SUDO_CMD} pacman -S --noconfirm neovim
+#             ;;
+#         *)
+#             echo "No supported package manager found. Please install neovim manually."
+#             exit 1
+#             ;;
+#     esac
 }
-install_additional_dependencies() {
-    case $(command -v apt || command -v zypper || command -v dnf || command -v pacman) in
-        *apt)
-            sudo apt update
-            sudo apt install -y neovim bat
-            ;;
-        *zypper)
-            sudo zypper refresh
-            sudo zypper install -y neovim bat
-            ;;
-        *dnf)
-            sudo dnf check-update
-            sudo dnf install -y neovim bat
-            ;;
-        *pacman)
-            sudo pacman -Syu
-            sudo pacman -S --noconfirm neovim bat
-            ;;
-        *)
-            echo "No supported package manager found. Please install neovim and bat manually."
-            exit 1
-            ;;
-    esac
+
+create_fastfetch_config() {
+    ## Get the correct user home directory.
+    USER_HOME=$(getent passwd "${SUDO_USER:-$USER}" | cut -d: -f6)
+    
+    if [ ! -d "$USER_HOME/.config/fastfetch" ]; then
+        mkdir -p "$USER_HOME/.config/fastfetch"
+    fi
+    # Check if the fastfetch config file exists
+    if [ -e "$USER_HOME/.config/fastfetch/config.jsonc" ]; then
+        rm -f "$USER_HOME/.config/fastfetch/config.jsonc"
+    fi
+    ln -svf "$GITPATH/config.jsonc" "$USER_HOME/.config/fastfetch/config.jsonc" || {
+        echo "${RED}Failed to create symbolic link for fastfetch config${RC}"
+        exit 1
+    }
 }
 
 linkConfig() {
     ## Get the correct user home directory.
-    USER_HOME=$(getent passwd ${SUDO_USER:-$USER} | cut -d: -f6)
+    USER_HOME=$(getent passwd "${SUDO_USER:-$USER}" | cut -d: -f6)
     ## Check if a bashrc file is already there.
-    OLD_BASHRC="${USER_HOME}/.bashrc"
-    if [[ -e ${OLD_BASHRC} ]]; then
-        echo -e "${YELLOW}Moving old bash config file to ${USER_HOME}/.bashrc.bak${RC}"
-        if ! mv ${OLD_BASHRC} ${USER_HOME}/.bashrc.bak; then
-            echo -e "${RED}Can't move the old bash config file!${RC}"
+    OLD_BASHRC="$USER_HOME/.bashrc"
+    if [ -e "$OLD_BASHRC" ]; then
+        echo "${YELLOW}Moving old bash config file to $USER_HOME/.bashrc.bak${RC}"
+        if ! mv "$OLD_BASHRC" "$USER_HOME/.bashrc.bak"; then
+            echo "${RED}Can't move the old bash config file!${RC}"
             exit 1
         fi
     fi
 
-    echo -e "${YELLOW}Linking new bash config file...${RC}"
-    ## Make symbolic link.
-    sudo mkdir ${USER_HOME}/.config/
-    ln -svf ${GITPATH}/.bashrc ${USER_HOME}/.bashrc
-    ln -svf ${GITPATH}/starship.toml ${USER_HOME}/.config/starship.toml
+    echo "${YELLOW}Linking new bash config file...${RC}"
+    ln -svf "$GITPATH/.bashrc" "$USER_HOME/.bashrc" || {
+        echo "${RED}Failed to create symbolic link for .bashrc${RC}"
+        exit 1
+    }
+    ln -svf "$GITPATH/starship.toml" "$USER_HOME/.config/starship.toml" || {
+        echo "${RED}Failed to create symbolic link for starship.toml${RC}"
+        exit 1
+    }
 }
 
 checkEnv
 installDepend
-installStarship
+installStarshipAndFzf
 installZoxide
 install_additional_dependencies
-installNala
-installTldr
-/ ~/.bashrc
-install_bashrc_support
-getbash
-nano_settings
+create_fastfetch_config
 
 if linkConfig; then
-    echo -e "${GREEN}Done!\nrestart your shell to see the changes.${RC}"
+    echo "${GREEN}Done!\nrestart your shell to see the changes.${RC}"
 else
-    echo -e "${RED}Something went wrong!${RC}"
+    echo "${RED}Something went wrong!${RC}"
 fi
