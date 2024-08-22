@@ -195,37 +195,37 @@ installZoxide() {
 }
 
 install_additional_dependencies() {
-#     # we have PACKAGER so just use it
-#     # for now just going to return early as we have already installed neovim in `installDepend`
-#     # so I am not sure why we are trying to install it again
-#     return
-#    case "$PACKAGER" in
-#         *apt)
-#             if [ ! -d "/opt/neovim" ]; then
-#                 curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim.appimage
-#                 chmod u+x nvim.appimage
-#                 ./nvim.appimage --appimage-extract
-#                 ${SUDO_CMD} mv squashfs-root /opt/neovim
-#                 ${SUDO_CMD} ln -s /opt/neovim/AppRun /usr/bin/nvim
-#             fi
-#             ;;
-#         *zypper)
-#             ${SUDO_CMD} zypper refresh
-#             ${SUDO_CMD} zypper -n install neovim # -y doesn't work on opensuse -n is short for -non-interactive which is equivalent to -y
-#             ;;
-#         *dnf)
-#             ${SUDO_CMD} dnf check-update
-#             ${SUDO_CMD} dnf install -y neovim
-#             ;;
-#         *pacman)
-#             ${SUDO_CMD} pacman -Syu
-#             ${SUDO_CMD} pacman -S --noconfirm neovim
-#             ;;
-#         *)
-#             echo "No supported package manager found. Please install neovim manually."
-#             exit 1
-#             ;;
-#     esac
+    # we have PACKAGER so just use it
+    # for now just going to return early as we have already installed neovim in `installDepend`
+    # so I am not sure why we are trying to install it again
+    return
+   case "$PACKAGER" in
+        *apt)
+            if [ ! -d "/opt/neovim" ]; then
+                curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim.appimage
+                chmod u+x nvim.appimage
+                ./nvim.appimage --appimage-extract
+                ${SUDO_CMD} mv squashfs-root /opt/neovim
+                ${SUDO_CMD} ln -s /opt/neovim/AppRun /usr/bin/nvim
+            fi
+            ;;
+        *zypper)
+            ${SUDO_CMD} zypper refresh
+            ${SUDO_CMD} zypper -n install neovim # -y doesn't work on opensuse -n is short for -non-interactive which is equivalent to -y
+            ;;
+        *dnf)
+            ${SUDO_CMD} dnf check-update
+            ${SUDO_CMD} dnf install -y neovim
+            ;;
+        *pacman)
+            ${SUDO_CMD} pacman -Syu
+            ${SUDO_CMD} pacman -S --noconfirm neovim
+            ;;
+        *)
+            echo "No supported package manager found. Please install neovim manually."
+            exit 1
+            ;;
+    esac
 }
 
 create_fastfetch_config() {
