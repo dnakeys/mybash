@@ -165,7 +165,7 @@ install_additional_dependencies() {
             exit 1
             ;;
     esac
-
+}
 
 linkConfig() {
     ## Get the correct user home directory.
