@@ -142,6 +142,7 @@ install_additional_dependencies() {
    sudo apt install -y nala
    sudo nala install tldr
    tldr -u
+}
 install_additional_dependencies() {
     case $(command -v apt || command -v zypper || command -v dnf || command -v pacman) in
         *apt)
