@@ -369,19 +369,19 @@ function cip() {
 
 }
 # Networks
-        network_inspect=$(docker network inspect --format "{{slice .Id 0 12}}""\
+network_inspect=$(docker network inspect --format "{{slice .Id 0 12}}""\
 ,{{.Name}}""\
 ,{{range .IPAM.Config}}{{.Subnet}}{{end}}""\
 ,{{range .IPAM.Config}}{{if (index . \"Gateway\")}}{{.Gateway}}{{end}}{{end}}" \
-            "${1}")
+"${1}")
 # Containers
-        container_inspect=$(docker container inspect --format "{{slice .Id 0 12}}""\
+container_inspect=$(docker container inspect --format "{{slice .Id 0 12}}""\
 ,{{slice .Name 1}}""\
 ,{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}""\
 ,{{range \$p, \$conf := .NetworkSettings.Ports}}{{if \$conf}}{{if ne (index \$conf 0).HostIp \"0.0.0.0\"}}{{(index \$conf 0).HostIp}}:{{end}}{{(index \$conf 0).HostPort}}{{else}}null{{end}}:{{\$p}} {{end}}""\
 ,{{range \$k, \$v := .NetworkSettings.Networks}}{{\$k}}{{end}}""\
 ,{{range .NetworkSettings.Networks}}{{.Gateway}} {{end}}" \
-            ${1})
+${1})
 
 
 #######################################################
