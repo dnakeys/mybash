@@ -38,6 +38,14 @@
             "key": "  "
         },
         {
+            "type": "disk",
+            "key": "  "
+        },
+        {
+            "type": "lm",
+            "key": "  "
+        },
+        {
             "type": "custom", // SoftwareStart
             "format": "├─────────── \u001b[1mSoftware Information\u001b[0m ───────────┤"
         },
@@ -59,6 +67,14 @@
             "key": "  "
         },
         {
+            "type": "packages" ,
+            "key": "  "
+        },
+        {
+            "type": "processes",
+            "key": "  "
+        },
+        {
             "type": "custom",
             "format": "|──────────────\u001b[1mUptime / Age\u001b[0m──────────────────|"
         },
@@ -73,7 +89,45 @@
             "key": "  Uptime ",
             "keyColor": "magenta"
         },
-        {
+        { "type": "custom", // Network Information Start
+        "format": "├─────────── \u001b[1mNetwork Information\u001b[0m ───────────┤"
+      },
+      { "type": "publicip", "timeout": 1000, "key": "   Public IP" },
+      {
+          "type": "localip",
+          "showIpv6": true,
+          "showMac": true,
+          "showSpeed": true,
+          "showMtu": true,
+          "showLoop": true,
+          "showFlags": true,
+          "showAllIps": true,
+          "key": "   Local IP"
+      },
+      { "type": "dns", "key": "   DNS" },
+      { "type": "wifi", "key": "   WiFi" },
+      {
+          "type": "custom", // Extra Info Start
+          "format": "├──────────── \u001b[1mExtra Information\u001b[0m ─────────────┤"
+      },
+      { "type": "datetime", "key": "   Date & Time" },
+      { "type": "locale", "key": "   Locale" },
+      { "type": "vulkan", "key": "   Vulkan" },
+      { "type": "opengl", "key": "   OpenGL" },
+      { "type": "opencl", "key": "   OpenCL" },
+      { "type": "users", "key": "   Users" },
+      { "type": "bluetooth", "key": "   Bluetooth" },
+      { "type": "bluetoothradio", "key": "   BT Radio" },
+      { "type": "sound", "key": "   Sound" },
+      { "type": "camera", "key": "   Camera" },
+      { "type": "gamepad", "key": "   Gamepad" },
+      { "type": "weather", "timeout": 1000, "key": "   Weather" },
+      { "type": "netio", "key": "  索 Net I/O" },
+      { "type": "diskio", "key": "   Disk I/O" },
+      { "type": "physicaldisk", "temp": true, "key": "   Physical Disk" },
+      { "type": "tpm", "key": "   TPM" },
+      { "type": "version", "key": "   Version" },     
+      {
             "type": "custom", // InformationEnd
             "format": "└────────────────────────────────────────────┘"
         },
