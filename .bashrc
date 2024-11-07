@@ -255,7 +255,164 @@ function dip() {
                 echo $(docker inspect --format "{{.ID }} {{ .Name }} {{ .NetworkSettings.Networks.bridge.IPAddress }}" $1 | sed 's/\///'):$(docker port "$1" | grep -o "0.0.0.0:.*" | cut -f2 -d:)
         fi
 }
+        _print_container_info() {
+            local container_id
+            local container_ports
+            local container_ip
+            local container_gateway
+            local container_ipv6
+            local container_ipv6_gateway
+            local container_name
+            container_id="${1}"
+        
+            container_ports=( $(docker port "$container_id" | grep -o "0.0.0.0:.*" | cut -f2 -d:) )
+            container_name="$(docker inspect --format "{{ .Name }}" "$container_id" | sed 's/\///')"
+            container_ip="$(docker inspect --format "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" "$container_id")"
+            container_gateway="$(docker inspect --format "{{range .NetworkSettings.Networks}}{{.Gateway}}{{end}}" "$container_id")"
+            container_ipv6="$(docker inspect --format "{{range .NetworkSettings.Networks}}{{.GlobalIPv6Address}}{{end}}" "$container_id")"
+            container_ipv6_gateway="$(docker inspect --format "{{range .NetworkSettings.Networks}}{{.IPv6Gateway}}{{end}}" "$container_id")"
 
+            echo ''$container_id','$container_name','$container_ip','$container_gateway','$container_ipv6','$container_ipv6_gateway','${container_ports[*]}'' >> "~/tmp/docker-container.txt"
+        }
+        
+        touch "~/tmp/docker-container.txt"
+        echo 'ID,NAME,IP,Gateway,IPv6,IPv6 Gateway,PORTS' >> "~/tmp/docker-container.txt"
+
+        local container_id
+        container_id="$1"
+        if [ -z "$container_id" ]; then
+            local container_id
+            docker ps -a --format "{{.ID}}" | while read -r container_id ; do
+                _print_container_info  "$container_id"
+            done
+        else
+            _print_container_info  "$container_id"
+        fi
+
+       
+       column -s "," --output-separator " ┊ " -t  "~/tmp/docker-container.txt"
+
+       rm -r "~/tmp/docker-container.txt"
+}
+This shows beautifully as:
+
+ID           ┊ NAME           ┊ IP         ┊ Gateway    ┊ IPv6               ┊ IPv6 Gateway  ┊ PORTS
+221aa9e5f8a9 ┊ alpine-A       ┊ 172.20.0.2 ┊ 172.20.0.1 ┊                    ┊               ┊
+21dfcac1a96f ┊ alpine-bridge2 ┊ 172.17.0.6 ┊ 172.17.0.1 ┊ fd00::1:0:0:2      ┊ fd00::1:0:0:1 ┊
+07d37817152f ┊ alpine-bridge3 ┊ 172.17.0.3 ┊ 172.17.0.1 ┊ fd00::1:0:0:3      ┊ fd00::1:0:0:1 ┊
+02315ce29e45 ┊ alpine-B       ┊ 172.21.0.2 ┊ 172.21.0.1 ┊                    ┊               ┊
+34c3247c609b ┊ portainer      ┊ 172.17.0.2 ┊ 172.17.0.1 ┊ fd00::1:242:ac11:2 ┊ fd00::1:0:0:1 ┊ 9000
+It'd be nice to have the tempfile as variable, but i don't know how to do that
+
+@scrapix
+scrapix commented on Dec 18, 2022 • 
+In case of interest for anyone:
+
+------------------------------------------------------
+NETWORK ┊ SUBNET IPv4     ┊ GATEWAY IPv4 ┊ SUBNET IPv6        ┊ GATEWAY IPv6 ┊ ID
+A       ┊ "172.18.0.0/16" ┊ "172.18.0.1" ┊ "fd00::a:0:0:0/80" ┊ null         ┊ 76163ba9d48d
+B       ┊ "172.19.0.0/16" ┊ "172.19.0.1" ┊ "fd00::b:0:0:0/80" ┊ null         ┊ 07d4d008ccb7
+bridge  ┊ "172.17.0.0/16" ┊ "172.17.0.1" ┊ "fd00::/64"        ┊ null         ┊ b866c9f00180
+host    ┊ null            ┊ null         ┊ null               ┊ null         ┊ 1bbbccd2171a
+none    ┊ null            ┊ null         ┊ null               ┊ null         ┊ 0016304b38be
+------------------------------------------------------
+CONTAINER      ┊ IP         ┊ Gateway    ┊ Mac               ┊ IPv6    ┊ IPv6 Gateway ┊ PORTS ┊ Network ┊ ID
+alpine-B       ┊ 172.19.0.2 ┊ 172.19.0.1 ┊ 00:00:00:00:00:01 ┊         ┊              ┊       ┊ B       ┊ cd73a2ea1317
+alpine-bridge3 ┊ 172.17.0.2 ┊ 172.17.0.1 ┊ 00:00:00:00:00:03 ┊ fd00::3 ┊ fd00::1      ┊       ┊ bridge  ┊ 4dc53b04f25c
+alpine-bridge2 ┊ 172.17.0.3 ┊ 172.17.0.1 ┊ 00:00:00:00:00:02 ┊ fd00::2 ┊ fd00::1      ┊       ┊ bridge  ┊ f5230f1ab0cb
+alpine-A       ┊ 172.18.0.2 ┊ 172.18.0.1 ┊ 00:00:00:00:00:01 ┊         ┊              ┊       ┊ A       ┊ d0befc3262d3
+------------------------------------------------------
+this can be achieved with following functions:
+
+function nip() {
+        _print_network_info() {
+            local network_name
+            local network_gatewayIPv4
+            local network_subnetIPv4
+            local network_gatewayIPv6
+            local network_subnetIPv6
+            network_id="${1}"
+        
+            network_name="$(docker inspect --format "{{ .Name }}" "$network_id" | sed 's/\///')"
+            network_subnetIPv4="$(docker inspect $network_id | jq '.[].IPAM.Config[0].Subnet')"
+            network_gatewayIPv4="$(docker inspect $network_id | jq '.[].IPAM.Config[0].Gateway')"
+            network_subnetIPv6="$(docker inspect $network_id | jq '.[].IPAM.Config[1].Subnet')"
+            network_gatewayIPv6="$(docker inspect $network_id | jq '.[].IPAM.Config[1].Gateway')"       
+
+            echo ''$network_name','$network_subnetIPv4','$network_gatewayIPv4','$network_subnetIPv6','$network_gatewayIPv6','$network_id'' >> "~/tmp/docker-network.txt"
+        }
+        
+        touch "~/tmp/docker-network.txt"
+        echo 'NETWORK,SUBNET IPv4,GATEWAY IPv4,SUBNET IPv6,GATEWAY IPv6,ID' >> "~/tmp/docker-network.txt"
+
+        local network_id
+        networkr_id="$1"
+        if [ -z "$network_id" ]; then
+            local network_id
+            docker network ls --format "{{.ID}}" | while read -r network_id ; do
+                _print_network_info  "$network_id"
+            done
+        else
+            _print_network_info  "$network_id"
+        fi
+
+       
+       column -s "," --output-separator " ┊ " -t  "~/tmp/docker-network.txt"
+
+       rm -r "~/tmp/docker-network.txt"
+}
+
+echo '------------------------------------------------------'
+nip;
+echo '------------------------------------------------------'
+
+function cip() {
+        _print_container_info() {
+            local container_id
+            local container_ports
+            local container_ip
+            local container_gateway
+            local container_ipv6
+            local container_ipv6_gateway
+            local container_name
+            local container_mac
+            local container_network
+            container_id="${1}"
+        
+            container_ports=( $(docker port "$container_id" | grep -o "0.0.0.0:.*" | cut -f2 -d:) )
+            container_name="$(docker inspect --format "{{ .Name }}" "$container_id" | sed 's/\///')"
+            container_ip="$(docker inspect --format "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" "$container_id")"
+            container_gateway="$(docker inspect --format "{{range .NetworkSettings.Networks}}{{.Gateway}}{{end}}" "$container_id")"
+            container_mac="$(docker inspect --format "{{range .NetworkSettings.Networks}}{{.MacAddress}}{{end}}" "$container_id")"
+            container_ipv6="$(docker inspect --format "{{range .NetworkSettings.Networks}}{{.GlobalIPv6Address}}{{end}}" "$container_id")"
+            container_ipv6_gateway="$(docker inspect --format "{{range .NetworkSettings.Networks}}{{.IPv6Gateway}}{{end}}" "$container_id")"
+            container_network="$(docker inspect --format "{{.HostConfig.NetworkMode}}" "$container_id" | sed 's/\///')"
+
+            echo ''$container_name','$container_ip','$container_gateway','$container_mac','$container_ipv6','$container_ipv6_gateway','${container_ports[*]}','$container_network','$container_id'' >> "~/tmp/docker-container.txt"
+        }
+        
+        touch "~/tmp/docker-container.txt"
+        echo 'CONTAINER,IP,Gateway,Mac,IPv6,IPv6 Gateway,PORTS,Network,ID' >> "~/tmp/docker-container.txt"
+
+        local container_id
+        container_id="$1"
+        if [ -z "$container_id" ]; then
+            local container_id
+            docker ps -a --format "{{.ID}}" | while read -r container_id ; do
+                _print_container_info  "$container_id"
+            done
+        else
+            _print_container_info  "$container_id"
+        fi
+
+       
+       column -s "," --output-separator " ┊ " -t  "~/tmp/docker-container.txt"
+
+       rm -r "~/tmp/docker-container.txt"
+}
+
+cip;
+echo '------------------------------------------------------'
 #######################################################
 # SPECIAL FUNCTIONS
 #######################################################
