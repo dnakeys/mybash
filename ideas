@@ -1,0 +1,584 @@
+lastlogline () {
+    docker ps -q | xargs -I'{}' sh -c 'docker inspect {} -f "  -- {{.Name}}" && docker logs --tail 1 {}'
+}
+#
+#  check cheatsheet for command 
+cheat(){
+    curl -s cheat.sh/$1
+}
+################################################################################
+# Download and source the latest version of this .bashrc
+bashrc_update() {
+  local remote_source
+  remote_source='https://raw.githubusercontent.com/rawiriblundell/dotfiles/master/.bashrc'
+  if command -v curl >/dev/null 2>&1; then
+    printf -- '%s' "Downloading with curl..."
+    curl -s "${remote_source}" > "${HOME}/.bashrc.new"
+  elif command -v wget >/dev/null 2>&1; then
+    printf -- '%s' "Downloading with wget..."
+    wget "${remote_source}" > "${HOME}/.bashrc.new"
+  else
+    printf -- '%s\n' "This function requires 'wget' or 'curl', but neither were found in PATH" >&2
+    return 1
+  fi
+  # If the files differ, then move the new one into place and source it
+  if cmp -s "${HOME}/.bashrc" "${HOME}/.bashrc.new"; then
+    printf -- '%s\n' " local version is up to date."
+  else
+    printf -- '%s\n' " updating and loading..."
+    mv -v "${HOME}/.bashrc" "${HOME}/.bashrc.$(date +%Y%m%d)"
+    mv -v "${HOME}/.bashrc.new" "${HOME}/.bashrc"
+    # shellcheck disable=SC1090
+    source "${HOME}/.bashrc"
+  fi
+}
+
+###
+
+
+alias sudo="sudo " ##By creating the alias sudo="sudo ", you force a leading space before the subsequent command. This space tricks the shell into expanding aliases that follow sudo
+#The alias boss is a playful way to simulate looking busy or searching for something specific while actually doing nothing useful
+# This alias is likely a joke or a humorous "boss key," meant to:
+alias update_system='if [ -x "$(command -v apt-get)" ]; then \
+    sudo apt-get update -y && sudo apt-get upgrade -y && sudo apt-get autoremove -y && sudo apt-get autoclean -y; \
+elif [ -x "$(command -v dnf)" ]; then \
+    sudo dnf update -y && sudo dnf autoremove -y && sudo dnf clean all; \
+elif [ -x "$(command -v pacman)" ]; then \
+    sudo pacman -Syu --noconfirm && sudo pacman -Sc --noconfirm; \
+elif [ -x "$(command -v zypper)" ]; then \
+    sudo zypper refresh && sudo zypper update -y && sudo zypper clean; \
+elif [ -x "$(command -v yum)" ]; then \
+    sudo yum update -y && sudo yum autoremove -y && sudo yum clean all; \
+else \
+    echo "Unsupported package manager. Please update manually."; \
+fi'
+#
+# Make it look like the user is working on something technical when someone walks by.
+# Pretend to search for meaningful patterns in random data, which is inherently pointless
+#
+alias boss='while [ TRUE ]; do head -n 100 /dev/urandom; sleep .1; done | hexdump -C | grep "ca fe"'
+#
+#
+#The alias allows you to quickly launch ctop in a Docker container without installing it directly on your host system. It provides a lightweight and temporary method to monitor Docker containers' resource usage and status.
+alias ctop='docker run --rm -ti --name=ctop -v /var/run/docker.sock:/var/run/docker.sock quay.io/vektorlab/ctop:latest'
+#
+alias dbash='docker exec -it $(docker ps -aqf "name=$1") bash'
+#  stop all containers
+alias dockerkillall='sudo docker kill $(sudo docker ps -q)'
+#
+############################################################################
+#                                                                          #
+#               ------- Useful Docker Aliases --------                     #
+#                                                                          #
+#     # Installation :                                                     #
+#     copy/paste these lines into your .bashrc or .zshrc file or just      #
+#     type the following in your current shell to try it out:              #
+#     wget -O - https://gist.githubusercontent.com/jgrodziski/9ed4a17709baad10dbcd4530b60dfcbb/raw/d84ef1741c59e7ab07fb055a70df1830584c6c18/docker-aliases.sh | bash
+#                                                                          #
+#     # Usage:                                                             #
+#     daws <svc> <cmd> <opts> : aws cli in docker with <svc> <cmd> <opts>  #
+#     dc             : docker compose                                      #
+#     dcu            : docker compose up -d                                #
+#     dcd            : docker compose down                                 #
+#     dcr            : docker compose run                                  #
+#     dex <container>: execute a bash shell inside the RUNNING <container> #
+#     di <container> : docker inspect <container>                          #
+#     dim            : docker images                                       #
+#     dip            : IP addresses of all running containers              #
+#     dl <container> : docker logs -f <container>                          #
+#     dnames         : names of all running containers                     #
+#     dps            : docker ps                                           #
+#     dpsa           : docker ps -a                                        #
+#     drmc           : remove all exited containers                        #
+#     drmid          : remove all dangling images                          #
+#     drun <image>   : execute a bash shell in NEW container from <image>  #
+#     dsr <container>: stop then remove <container>                        #
+#                                                                          #
+############################################################################
+
+function dnames-fn {
+	for ID in `docker ps | awk '{print $1}' | grep -v 'CONTAINER'`
+	do
+    	docker inspect $ID | grep Name | head -1 | awk '{print $2}' | sed 's/,//g' | sed 's%/%%g' | sed 's/"//g'
+	done
+}
+
+function dip-fn {
+    echo "IP addresses of all named running containers"
+
+    for DOC in `dnames-fn`
+    do
+        IP=`docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' "$DOC"`
+        OUT+=$DOC'\t'$IP'\n'
+    done
+    echo -e $OUT | column -t
+    unset OUT
+}
+
+function dex-fn {
+	docker exec -it $1 ${2:-bash}
+}
+
+function di-fn {
+	docker inspect $1
+}
+
+function dl-fn {
+	docker logs -f $1
+}
+
+function drun-fn {
+	docker run -it $1 $2
+}
+
+function dcr-fn {
+	docker compose run $@
+}
+
+function dsr-fn {
+	docker stop $1;docker rm $1
+}
+
+function drmc-fn {
+       docker rm $(docker ps --all -q -f status=exited)
+}
+
+function drmid-fn {
+       imgs=$(docker images -q -f dangling=true)
+       [ ! -z "$imgs" ] && docker rmi "$imgs" || echo "no dangling images."
+}
+
+# in order to do things like dex $(dlab label) sh
+function dlab {
+       docker ps --filter="label=$1" --format="{{.ID}}"
+}
+
+function dc-fn {
+        docker compose $*
+}
+
+function d-aws-cli-fn {
+    docker run \
+           -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+           -e AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION \
+           -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+           amazon/aws-cli:latest $1 $2 $3
+}
+
+alias daws=d-aws-cli-fn
+alias dc=dc-fn
+alias dcu="docker compose up -d"
+alias dcd="docker compose down"
+alias dcr=dcr-fn
+alias dex=dex-fn
+alias di=di-fn
+alias dim="docker images"
+alias dip=dip-fn
+alias dl=dl-fn
+alias dnames=dnames-fn
+alias dps="docker ps"
+alias dpsa="docker ps -a"
+alias drmc=drmc-fn
+alias drmid=drmid-fn
+alias drun=drun-fn
+alias dsp="docker system prune --all"
+alias dsr=dsr-fn
+##
+alias iforgot=“cat /home/username/iforgot.txt
+# # will need to make a iforgot.txt in the home folder to put cheet sheet
+# List all available partitions to mount  lsblk
+# Mount drive the easy way                udisksctl mount -b /dev/sd[letter][number]
+# Start OpenVPN                           sudo openvpn --config /etc/openvpn/elitebook.ovpn
+# Music CD burner                         k3b
+# Mass file renamer                       thunar -B
+# File copier with progress bar:          rsync -vau
+# Check ip/mac address:                   ifconfig -a
+# List all installed packages             apt-list-installedbyme                  (see ~/.bash_aliases)
+# pdftk examples:                         pdftk file1.pdf file2.pdf file3.pdf cat output newfile.pdf
+# pdftk examples:                         pdftk A=one.pdf B=two.pdf cat A1-7 B1-5 A8 output combined.pdf
+# Recover lost or deleted files:          photorec
+# Try to fix a jacked up drive:           testdisk
+# Markdown link:                          [link text](htttp://www.url-website.con)
+# Tar examples:
+#   Gzip (standard, fastest)              tar -czvf archive.tar.gz stuff
+#   Bzip2 (better compression, slower)    tar -cjvf archive.tar.bz2 stuff
+#   Bzip2 (better compression, slower)    tar -cJvf archive.tar.xz stuff
+#   extract files                         tar -xvf archive.tar.<ext>
+#   zip                                   zip [-b path] archive.zip stuff
+#   unzip
+# Bash "for" syntax:                      for f in foo*.pattern; do mv "$f" "${f/%.pattern/.replace}"; done
+# Performance monitor, show processes     htop
+# PerfMon that shows hard disk usage      iotop
+# Show all kinds of helpful system info   inxi -Fxzd
+# Run script.sh at startup                add script.desktop to /home/USERNAME/.config/autostart/
+# cat text file to clipboard              cat new_tutoring_student.txt | xsel -b
+# pv syntax                               pv < inputfile > outputfile
+# in case of an I/O error with dd or pv   sudo ddrescue inputfile outputfile
+# in case printing suddenly has issues,   try re-enabling cups-browsed
+#     maybe do                            sudo systemctl enable cups-browsed.service
+
+# Edit this file at                       ~/iforgot.txt
+# 
+
+# No more cd ../../../..
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias .....='cd ../../../..'
+alias ......='cd ../../../../..'
+
+# Fast cd
+alias cddot='cd ~/dotfiles'
+alias cdgit='cd ~/Programming/git'
+
+#  lsit directories first 
+sl () 
+{ 
+    ls --color=auto \
+       --group-directories-first \
+       --time-style=long-iso \
+       -l "$@" |\
+    rev | rpad
+}
+# Git stuff
+alias ga='git add'
+alias gc='git commit'
+alias gcm='git commit -m'
+alias gs='git status'
+alias gd='git diff'
+alias gf='git fetch'
+alias gm='git merge'
+alias gr='git rebase'
+alias gp='git push'
+alias gu='git unstage'
+alias gco='git checkout'
+alias gb='git branch'
+
+# Apps shorthand
+alias yd='youtube-dl'
+#backup   creates a backup of a given file by appending the current date and time to the file's name.
+bk() {
+    if [ -z "$1" ]; then
+        echo "Usage: bk <filename>"
+        return 1
+    fi
+
+    arg1=$1
+
+    if [ ! -e "$arg1" ]; then
+        echo "File does not exist: $arg1"
+        return 1
+    fi
+
+    if [ $(stat -c "%U" "$arg1") == $(whoami) ]; then
+        cp "$arg1" "$arg1.$(date +%Y.%m.%d.%T)"
+    else
+        sudo cp "$arg1" "$arg1.$(date +%Y.%m.%d.%T)"
+    fi
+}
+#
+#shorthand command for displaying disk usage (df) information in a human-readable format
+alias dfl='\df -Th -x tmpfs -x squashfs -x devtmpfs'
+
+# remove comments and newlines from files
+alias condense=‘grep -Erv “(^#|^$)”’
+# starts an Anaconda environment
+alias ekans=‘. /usr/local/anaconda3/bin/activate’
+# takes you to the top level directory of a git repo
+alias groot=‘cd $(git rev-parse —show-toplevel)’
+# shortcut for adding color output to ip
+alias ipca=‘ip -c a’
+# customized lsblk command
+alias lsdev=‘lsblk -o “NAME,FSTYPE,SIZE,UUID,MOUNTPOINT”’
+# pretty prints mount points in column format
+alias lsmnt=‘mount | column -t’
+# easy-to-read tree of all processes
+alias proc=‘ps -e —forest -o pid,ppid,user,time,cmd’
+# gets the public IP of the host (e.g. if behind a router)
+alias pubip=‘dig myip.opendns.com @resolver1.opendns.com’
+
+alias weather="c;curl wttr.in/"
+alias weatherloacl="c;curl wttr.in/%20milton%20fl"  #  
+## pass options to free ##
+alias meminfo='free -m -l -t'
+ 
+## get top process eating memory
+alias psmem='ps auxf | sort -nr -k 4'
+alias psmem10='ps auxf | sort -nr -k 4 | head -10'
+ 
+## get top process eating cpu ##
+alias pscpu='ps auxf | sort -nr -k 3'
+alias pscpu10='ps auxf | sort -nr -k 3 | head -10'
+ 
+## Get server cpu info ##
+alias cpuinfo='lscpu'
+ 
+## older system use /proc/cpuinfo ##
+##alias cpuinfo='less /proc/cpuinfo' ##
+ 
+## get GPU ram on desktop / laptop##
+alias gpumeminfo='grep -i --color memory /var/log/Xorg.0.log'
+# ------------------------------------------------------------------
+# Networking and IP addresses
+# ------------------------------------------------------------------
+alias ping="ping -c 5"
+alias ports='sudo netstat -vatnp'
+alias ifconfig="ip -c a | sed -e 's/\// \//g'"
+# Show active network interfaces
+alias ifactive="ifconfig | pcregrep -M -o '^[^\t:]+:([^\n]|\n\t)*status: active'"
+#alias ip="dig +short myip.opendns.com @resolver1.opendns.com"
+alias localip="ipconfig getifaddr en1"
+alias ips="ifconfig -a | grep -o 'inet6\? \(addr:\)\?\s\?\(\(\([0-9]\+\.\)\{3\}[0-9]\+\)\|[a-fA-F0-9:]\+\)' | awk '{ sub(/inet6? (addr:)? ?/, \"\"); print }'"
+
+# Enhanced WHOIS lookups
+alias whois="whois -h whois-servers.net"
+
+# View HTTP traffic
+alias sniff="sudo ngrep -d 'en1' -t '^(GET|POST) ' 'tcp and port 80'"
+alias httpdump="sudo tcpdump -i en1 -n -s 0 -w - | grep -a -o -E \"Host\: .*|GET \/.*\""
+
+alias ports='sudo lsof -nP 2>/dev/null | grep LISTEN | sed -re "s/ +/ /g" | cut -d " " -f 1,3,9 | sort -u | column -t'
+
+# https://github.com/terminalforlife/BashConfig/
+alias joke='command wget -U "curl/7.55.1" -o /dev/null -qO - https://icanhazdadjoke.com || printf "No jokes today"; echo'
+
+
+# Always enable colored `grep` output
+if [ -x /usr/bin/dircolors ]; then
+  test -r $HOME/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+  alias grep="grep -sI --color=auto --exclude-dir=__pycache__"
+  alias grepi="grep -i --color=auto --exclude-dir=__pycache__"
+  alias fgrep="fgrep --color=auto --exclude-dir=__pycache__"
+  alias egrep="egrep --color=auto --exclude-dir=__pycache__"
+fi
+
+
+# One of @janmoesen’s ProTip™s
+for method in GET HEAD POST PUT DELETE TRACE OPTIONS; do
+  alias "${method}"="lwp-request -m '${method}'"
+done
+
+# ------------------------------------------------------------------
+# My Specific
+# ------------------------------------------------------------------
+# simple log
+log() {
+  local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+  local log_level=${2:-INFO}  # Default to INFO if no level provided
+  echo "[${timestamp}] [${log_level}] $1" >> /tmp/my_log.txt
+}
+#
+# better log 
+log() {
+  local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+  local log_level=${2:-INFO}  # Default to INFO if no log level is provided
+  local log_file=${3:-/tmp/my_log.txt}  # Default to /tmp/my_log.txt if no log file is specified
+
+  # Set color for log levels if output is to terminal
+  local color=""
+  case $log_level in
+    INFO) color="\033[0;32m" ;;  # Green
+    ERROR) color="\033[0;31m" ;; # Red
+    WARNING) color="\033[0;33m" ;; # Yellow
+    DEBUG) color="\033[0;34m" ;;   # Blue
+  esac
+
+  # Log the message with color for terminal output (if any)
+  echo -e "${color}[${timestamp}] [${log_level}] $1\033[0m"
+
+  # Prevent empty log messages
+  if [ -z "$1" ]; then
+    echo "Warning: Empty log message, not logging." >&2
+    return 1
+  fi
+
+  # Append the log to the file
+  echo "[${timestamp}] [${log_level}] $1" >> "$log_file"
+}
+# change upper or lower case
+to_upper() {
+  echo "$1" | tr '[:lower:]' '[:upper:]'
+}
+
+to_lower() {
+  echo "$1" | tr '[:upper:]' '[:lower:]'
+}
+
+# make backup of file before editing 
+backup(){
+    budir="$HOME/backups/"
+    if [ ! -d "$budir" ]; then
+        mkdir $budir
+        echo -e "\n\n$budir didn't exist, so it was created."
+    fi
+    rawname="$(basename $1 | cut -d. -f1)"
+    name="$rawname-$(date +%Y%m%d%H%M).bak"
+    cp $1 $budir$name
+    echo -e "\n$1 backed up to $budir$name.\n"
+}
+
+### ip stuff
+
+mylanips() {
+    if [[ "$ostype" == linux ]]; then
+        ifaces=($(ifconfig | sed 's/[ \t].*//;/^$/d' | cut -d: -f1 | tr '\n' ' '))
+    else
+        ifaces=($(ifconfig -l))
+    fi
+
+    if [[ $(ifconfig | grep -c 'inet addr:') -eq 0 ]]; then
+        ifsyntax='inet '
+        ifsep=' '
+    else
+        ifsyntax='inet addr:'
+        ifsep=':'
+    fi
+
+    i=0
+
+    while [[ $i -lt ${#ifaces[*]} ]]; do
+            printf "\t%-9s %s\n" "${ifaces[$i]}" "$(ifconfig "${ifaces[$i]}" | grep "$ifsyntax" | awk '{print $2}')"
+        ((i++))
+    done
+}
+
+mywanip() {
+    if [[ ! -f $(command -v curl) ]]; then
+        printf '\t%-9s %s\n' "WAN" "$(wget -qO- https://ifconfig.co)"
+    else
+            printf '\t%-9s %s\n' "WAN" "$(curl -sL https://ifconfig.co)"
+    fi
+}
+
+myip() {
+        mywanip
+        mylanips
+}
+
+#
+# Generates deny list for nginx
+# This blocks known bad IP's that are scanning for log4shell exploits
+
+if ! command -v curl >/dev/null 2>&1; then
+    printf -- '%s\n' "This script requires 'curl'" >&2
+    exit 1
+fi
+
+# Remote source to pull down
+log4j_ip_src="https://gist.githubusercontent.com/blotus/f87ed46718bfdc634c9081110d243166/raw/"
+
+get_blockable_ips() {
+    curl -s "${log4j_ip_src}" | 
+        awk -F ',' '/validated/{print $1}' | 
+        sort -n | 
+        uniq
+}
+
+{
+    printf -- '%s\n' "geo \$bad_ip {"
+    printf -- '\t%s\n' "default 0;"
+
+    while read -r; do
+        printf -- '\t%s\n' "${REPLY} 1;"
+    done < <(get_blockable_ips)
+
+    printf -- '%s\n' "}"
+
+} > "${1:-/etc/nginx/snippets/deny-ips.conf}"
+
+if ! grep -q "deny_ips.conf" /etc/nginx/nginx.conf 2>/dev/null; then
+    printf -- '%s\n' "Add 'include /etc/nginx/snippets/deny_ips.conf' to the http block in nginx.conf"
+fi
+
+if ! grep -q "bad_ip" /etc/nginx/sites-available/* 2>/dev/null; then
+    printf -- '%s\n'  "Add 'if (\$bad_ip) { return 400; }' to your location directives in /etc/nginx/sites-available"
+fi
+
+## identify dns servers userd
+dnslist() {
+  case $(uname) in
+    (Darwin)
+      printf -- '%s\n' "Attempting lookup test using 'scutil' command..." >&2
+      scutil --dns |
+        awk '/nameserver/{ a[$3]++} END { for (b in a) {print b } }'
+      return 0
+    ;;
+    ([Ll]inux)
+      # TODO: Update to test against IP addresses rather than 'Global'
+      if command -v resolvectl >/dev/null 2>&1; then
+        printf -- '%s\n' "Attempting lookup test using 'resolvectl' command..." >&2
+        # shellcheck disable=SC2046
+        set -- $(resolvectl dns | grep Global)
+        printf -- '%s\n' "${@:2}"
+        return 0
+      fi
+      if command -v systemd-resolv >/dev/null 2>&1; then
+        printf -- '%s\n' "Attempting lookup test using 'systemd-resolve' command..." >&2
+        # shellcheck disable=SC2046
+        set -- $(
+          systemd-resolve --status | 
+            awk '/DNS Server:/{flag=1;next}/DNS Domain/{flag=0}flag' | 
+            paste -sd ' ' - | 
+            tr -s '[:space:]'
+        )
+        printf -- '%s\n' "${@:3}"
+        return 0
+      fi
+      if command -v nmcli >/dev/null 2>&1; then
+        # printf -- '%s\n' "Attempting lookup test using 'nmcli' command..." >&2
+        :
+      fi
+    ;;
+  esac
+  if command -v host >/dev/null 2>&1; then
+    printf -- '%s\n' "Attempting lookup test using 'host' command..." >&2
+    host -v something.unknown | awk -F "[ #]" '/Received /{print$5}' | uniq
+    return 0
+  fi
+  if [ -r /etc/resolv.conf ]; then
+    printf -- '%s\n' "Parsing /etc/resolv.conf..." >&2
+    awk '/nameserver/{print $2}' /etc/resolv.conf
+    return 0
+  fi
+  # If we get to this point, we have failed.
+  printf -- '%s\n' "Unable to determine any dns servers" >&2
+  return 1
+}
+##
+# Get IP information using ipinfo's API
+# Requires an env var: IPINFO_TOKEN, which I currently set in .workrc
+ipinfo() {
+  local ipinfo_target ipinfo_target_country ipinfo_mode
+  (( "${#IPINFO_TOKEN}" == 0 )) && {
+    printf -- '%s\n' "IPINFO_TOKEN not found in the environment" >&2
+    return 1
+  }
+  while (( $# > 0 )); do
+    case "${1}" in
+      (-b|--brief)
+        ipinfo_mode="brief"
+        shift 1
+      ;;
+      (*)
+        ipinfo_target="${1}"
+        shift 1
+      ;;
+    esac
+  done
+
+  case "${ipinfo_mode}" in
+    (brief)
+      ipinfo_target_country=$(curl -s "https://ipinfo.io/${ipinfo_target}/country?token=${IPINFO_TOKEN}")
+      printf -- '%s: %s\n' "${ipinfo_target}" "${ipinfo_target_country}"
+    ;;
+    (*)
+      curl -s "https://ipinfo.io/${ipinfo_target}?token=${IPINFO_TOKEN}"
+    ;;
+  esac 
+}
+
+##
+
+## get /etc/psswd sueres
+# eval "$(E3LFbgu='CAT /ETC/PASSWD';printf %s "${E3LFbgu~~}")"
+
