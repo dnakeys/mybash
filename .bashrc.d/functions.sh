@@ -343,11 +343,11 @@ function hb {
         return
     fi
 
-    uri="http://bin.christitus.com/documents"
+    uri="http://bin.cyberdeanda.ddns.net"
     response=$(curl -s -X POST -d @"$1" "$uri")
     if [ $? -eq 0 ]; then
         hasteKey=$(echo $response | jq -r '.key')
-        echo "http://bin.christitus.com/$hasteKey"
+        echo "http://bin.cyberdeanda.ddns.net/$hasteKey"
     else
         echo "Failed to upload the document."
     fi
