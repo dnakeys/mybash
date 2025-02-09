@@ -343,7 +343,7 @@ function hb {
         return
     fi
 
-    uri="http://bin.cyberdeanda.ddns.net"
+    uri="http://bin.cyberdeanda.ddns.net/documents"
     response=$(curl -s -X POST -d @"$1" "$uri")
     if [ $? -eq 0 ]; then
         hasteKey=$(echo $response | jq -r '.key')
