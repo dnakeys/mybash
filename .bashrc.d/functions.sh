@@ -1,6 +1,50 @@
 #######################################################
 # SPECIAL FUNCTIONS
 #######################################################
+if [ -x /usr/bin/dircolors ]; then
+  test -r $HOME/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+  alias grep="grep -sI --color=auto --exclude-dir=__pycache__"
+  alias grepi="grep -i --color=auto --exclude-dir=__pycache__"
+  alias fgrep="fgrep --color=auto --exclude-dir=__pycache__"
+  alias egrep="egrep --color=auto --exclude-dir=__pycache__"
+fi
+#
+alias boss='while [ TRUE ]; do head -n 100 /dev/urandom; sleep .1; done | hexdump -C | grep "ca fe"'
+#
+#
+#The alias allows you to quickly launch ctop in a Docker container without installing it directly on your host system. It provides a lightweight and temporary method to monitor Docker containers' resource usage and status.
+alias ctop='docker run --rm -ti --name=ctop -v /var/run/docker.sock:/var/run/docker.sock quay.io/vektorlab/ctop:latest'
+#
+#  check cheatsheet for command 
+cheat(){
+    curl -s cheat.sh/$1
+}
+################################################################################
+# Download and source the latest version of this .bashrc
+bashrc_update() {
+  local remote_source
+  remote_source='https://raw.githubusercontent.com/dnakeys/MYBASH/master/.bashrc'
+  if command -v curl >/dev/null 2>&1; then
+    printf -- '%s' "Downloading with curl..."
+    curl -s "${remote_source}" > "${HOME}/.bashrc.new"
+  elif command -v wget >/dev/null 2>&1; then
+    printf -- '%s' "Downloading with wget..."
+    wget "${remote_source}" > "${HOME}/.bashrc.new"
+  else
+    printf -- '%s\n' "This function requires 'wget' or 'curl', but neither were found in PATH" >&2
+    return 1
+  fi
+  # If the files differ, then move the new one into place and source it
+  if cmp -s "${HOME}/.bashrc" "${HOME}/.bashrc.new"; then
+    printf -- '%s\n' " local version is up to date."
+  else
+    printf -- '%s\n' " updating and loading..."
+    mv -v "${HOME}/.bashrc" "${HOME}/.bashrc.$(date +%Y%m%d)"
+    mv -v "${HOME}/.bashrc.new" "${HOME}/.bashrc"
+    # shellcheck disable=SC1090
+    source "${HOME}/.bashrc"
+  fi
+}
 # Extracts any archive(s) (if unp isn't installed)
 extract() {
 	for archive in "$@"; do
