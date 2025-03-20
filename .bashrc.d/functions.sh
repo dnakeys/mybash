@@ -23,7 +23,7 @@ cheat(){
 # Download and source the latest version of this .bashrc
 bashrc_update() {
   local remote_source
-  remote_source='https://raw.githubusercontent.com/dnakeys/MYBASH/master/.bashrc'
+  remote_source='https://raw.githubusercontent.com/dnakeys/mybash/master/.bashrc'
   if command -v curl >/dev/null 2>&1; then
     printf -- '%s' "Downloading with curl..."
     curl -s "${remote_source}" > "${HOME}/.bashrc.new"
