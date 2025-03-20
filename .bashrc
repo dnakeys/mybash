@@ -5,10 +5,17 @@ iatest=$(expr index "$-" i)
 # SOURCED ALIAS'S AND SCRIPTS BY zachbrowne.me
 #######################################################
 # Source aliases and functions
+# if [ -d ~/.bashrc.d ]; then
+#   for file in ~/.bashrc.d/*.sh; do
+#     [ -r "$file" ] && source "$file"
+#   done
+# fi
 if [ -d ~/.bashrc.d ]; then
+  shopt -s nullglob  # Avoids errors when no files match
   for file in ~/.bashrc.d/*.sh; do
     [ -r "$file" ] && source "$file"
   done
+  shopt -u nullglob  # Restore default behavior
 fi
 ####
 #aliases.sh and functions.sh
