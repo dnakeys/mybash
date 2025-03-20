@@ -48,19 +48,18 @@ function dnames-fn {
 	do
     	docker inspect $ID | grep Name | head -1 | awk '{print $2}' | sed 's/,//g' | sed 's%/%%g' | sed 's/"//g'
 	done
-}
-
 function dip-fn {
     echo "IP addresses of all named running containers"
-
-    for DOC in `dnames-fn`
-    do
-        IP=`docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' "$DOC"`
-        OUT+=$DOC'\t'$IP'\n'
+    
+    local OUT=""
+    for DOC in $(dnames-fn); do
+        IP=$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' "$DOC")
+        OUT+="$DOC"$'\t'"$IP"$'\n'
     done
-    echo -e $OUT | column -t
-    unset OUT
+    
+    echo -e "$OUT" | column -t
 }
+
 
 function dex-fn {
 	docker exec -it $1 ${2:-bash}
